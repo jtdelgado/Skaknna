@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="45dp"
+    android:height="45dp"
+    android:viewportWidth="45"
+    android:viewportHeight="45">
+    <!-- Base -->
+    <path
+        android:fillColor="#FFF8E7"
+        android:strokeColor="#3D2510"
+        android:strokeWidth="1.5"
+        android:pathData="M 9,40.5 L 36,40.5 L 36,37 L 9,37 Z" />
+    <!-- Body -->
+    <path
+        android:fillColor="#FFF8E7"
+        android:strokeColor="#3D2510"
+        android:strokeWidth="1.5"
+        android:pathData="M 12,37 L 12,18 L 33,18 L 33,37 Z" />
+    <!-- Battlements -->
+    <path
+        android:fillColor="#FFF8E7"
+        android:strokeColor="#3D2510"
+        android:strokeWidth="1.5"
+        android:pathData="M 12,18 L 12,10 L 16,10 L 16,14 L 20,14 L 20,10 L 25,10 L 25,14 L 29,14 L 29,10 L 33,10 L 33,18 Z" />
+    <!-- Window cutout -->
+    <path
+        android:fillColor="#3D2510"
+        android:strokeWidth="0"
+        android:pathData="M 16,25 L 29,25 L 29,37 L 16,37 Z" />
+</vector>
