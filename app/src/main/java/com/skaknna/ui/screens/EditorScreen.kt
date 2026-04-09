@@ -1,12 +1,19 @@
 package com.skaknna.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
@@ -45,14 +52,25 @@ fun EditorScreen(
 
     var showSaveDialog by remember { mutableStateOf(false) }
     var boardName by remember { mutableStateOf("") }
-    // Eraser mode: tapping a piece on the board removes it
-    var eraserMode by remember { mutableStateOf(false) }
 
     // ─── DnD State ────────────────────────────────────────────────────────────
     val dndState = remember { DragAndDropState() }
 
-    // Track board bounds for palette→board drop detection
     var boardBoundsInWindow by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+
+    // ─── Delete zone state ─────────────────────────────────────────────────────
+    // Floating trash button that appears when dragging a board piece.
+    var deleteZoneBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+
+    val activeDrag = dndState.activeDrag
+    val isDraggingFromBoard = activeDrag?.source is DragSource.FromBoard
+
+    // Is the finger currently over the delete zone?
+    val isHoveringDelete = remember(activeDrag, deleteZoneBounds) {
+        val drag = activeDrag ?: return@remember false
+        val zone = deleteZoneBounds ?: return@remember false
+        drag.screenX in zone.left..zone.right && drag.screenY in zone.top..zone.bottom
+    }
 
     // ─── Save dialog ──────────────────────────────────────────────────────────
     if (showSaveDialog) {
@@ -104,7 +122,7 @@ fun EditorScreen(
         )
     }
 
-    // ─── Drop handler: board→board (called from ChessBoard's own onDragEnd) ───
+    // ─── Drop handler: board→board ────────────────────────────────────────────
     fun handleBoardDrop(source: DragSource, toRow: Int, toCol: Int) {
         when (source) {
             is DragSource.FromBoard -> {
@@ -112,17 +130,22 @@ fun EditorScreen(
                 viewModel.movePiece(source.row, source.col, toRow, toCol)
             }
             is DragSource.FromPalette -> {
-                // Should not arrive here via board handler, but guard anyway
                 val piece = dndState.activeDrag?.piece ?: return
                 viewModel.placePiece(toRow, toCol, piece)
             }
         }
     }
 
-    // ─── Handle every palette drag end (placement OR discard) ─────────────────
-    // KEY FIX: The palette gesture owns the touch event from start to finish.
-    // The board's pointerInput can never receive a palette-initiated gesture end.
-    // So we do ALL drop detection here, after the palette's onDragEnd fires.
+    // ─── Handle when a board piece is dropped outside the board ───────────────
+    fun handleBoardDropOutside(source: DragSource.FromBoard, screenX: Float, screenY: Float) {
+        val zone = deleteZoneBounds
+        if (zone != null && screenX in zone.left..zone.right && screenY in zone.top..zone.bottom) {
+            viewModel.removePiece(source.row, source.col)
+        }
+        // If dropped outside board but NOT on delete zone → piece stays (no action needed)
+    }
+
+    // ─── Handle palette drag end ───────────────────────────────────────────────
     fun handlePaletteDragEnd() {
         val drag = dndState.activeDrag
         try {
@@ -143,17 +166,14 @@ fun EditorScreen(
                     is DragSource.FromBoard   -> viewModel.movePiece(drag.source.row, drag.source.col, row, col)
                 }
             } else {
-                // Dropped outside board: remove if it came from the board
-                if (drag.source is DragSource.FromBoard) {
-                    viewModel.removePiece(drag.source.row, drag.source.col)
-                }
+                // Palette pieces outside board are simply discarded
             }
         } finally {
-            dndState.endDrag() // ALWAYS clear drag state — prevents stuck overlay
+            dndState.endDrag()
         }
     }
 
-    // ─── UI ───────────────────────────────────────────────────────────────────
+    // ─── UI ───────────────────────────────────────────────────────────────────–
     CompositionLocalProvider(LocalDragAndDropState provides dndState) {
         Scaffold(
             topBar = {
@@ -189,18 +209,17 @@ fun EditorScreen(
                 )
             }
         ) { paddingValues ->
-            // Root Box so we can overlay the floating drag piece
+            // Root Box: hosts content + floating overlays (drag piece, delete zone)
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(horizontal = 16.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // ── FEN input ─────────────────────────────────────────────
+                    // ── FEN input ──────────────────────────────────────────────
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -216,7 +235,7 @@ fun EditorScreen(
                         )
                     }
 
-                    // ── Validation warnings ───────────────────────────────────
+                    // ── Validation warnings ────────────────────────────────────
                     if (!validation.isValid) {
                         Column(
                             modifier = Modifier
@@ -242,36 +261,15 @@ fun EditorScreen(
                             }
                         }
                     }
-                    // ── Barra de acciones del tablero ──────────────────────────
+
+                    // ── Action buttons ─────────────────────────────────────────
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Borrar pieza (toggle)
-                        val eraserContainerColor = if (eraserMode)
-                            Color(0xFF8B1A1A)  // rojo madera cuando activo
-                        else com.skaknna.ui.theme.WoodMedium
-                        val eraserContentColor = if (eraserMode)
-                            Color(0xFFFFAAAA)
-                        else com.skaknna.ui.theme.GoldenYellow
-                        val eraserBorderColor = if (eraserMode)
-                            Color(0xFFCC3333)
-                        else com.skaknna.ui.theme.WoodDark
-
-                        ExtendedFloatingActionButton(
-                            onClick = { eraserMode = !eraserMode },
-                            icon = { Icon(Icons.Default.Delete, contentDescription = null) },
-                            text = { Text(if (eraserMode) "Borrar: ON" else "Borrar", fontWeight = FontWeight.Bold) },
-                            containerColor = eraserContainerColor,
-                            contentColor = eraserContentColor,
-                            modifier = Modifier
-                                .weight(1f)
-                                .border(3.dp, eraserBorderColor, RoundedCornerShape(16.dp))
-                        )
-
                         // Limpiar todo
                         ExtendedFloatingActionButton(
-                            onClick = { viewModel.clearBoard(); eraserMode = false },
+                            onClick = { viewModel.clearBoard() },
                             icon = { Icon(Icons.Default.Clear, contentDescription = null) },
                             text = { Text("Limpiar", fontWeight = FontWeight.Bold) },
                             containerColor = com.skaknna.ui.theme.WoodMedium,
@@ -283,7 +281,7 @@ fun EditorScreen(
 
                         // Posición inicial
                         ExtendedFloatingActionButton(
-                            onClick = { viewModel.resetToStartPosition(); eraserMode = false },
+                            onClick = { viewModel.resetToStartPosition() },
                             icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                             text = { Text("Reiniciar", fontWeight = FontWeight.Bold) },
                             containerColor = com.skaknna.ui.theme.WoodMedium,
@@ -294,13 +292,15 @@ fun EditorScreen(
                         )
                     }
 
+                    // ── Board + palettes ───────────────────────────────────────
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .weight(1f)
                             .clip(RoundedCornerShape(16.dp))
                             .background(com.skaknna.ui.theme.WoodDark)
                             .border(2.dp, com.skaknna.ui.theme.WoodMedium, RoundedCornerShape(16.dp))
-                            .padding(16.dp),
+                            .padding(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Black palette
@@ -310,27 +310,23 @@ fun EditorScreen(
                             modifier = Modifier.fillMaxWidth(),
                             onPieceDragEnd = { handlePaletteDragEnd() }
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         // Interactive chess board
                         ChessBoard(
                             board = board,
-                            eraserMode = eraserMode,
-                            onCellTap = { row, col ->
-                                if (eraserMode) {
-                                    viewModel.removePiece(row, col)
-                                }
-                            },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .onGloballyPositioned { coords ->
-                                    boardBoundsInWindow = coords.boundsInWindow()
-                                },
+                                .weight(1f),
+                            onBoardBoundsChanged = { boardBoundsInWindow = it },
                             onDrop = { source, toRow, toCol ->
                                 handleBoardDrop(source, toRow, toCol)
+                            },
+                            onDroppedOutsideBoard = { source, screenX, screenY ->
+                                handleBoardDropOutside(source, screenX, screenY)
                             }
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         // White palette
                         PiecePalette(
@@ -340,11 +336,67 @@ fun EditorScreen(
                             onPieceDragEnd = { handlePaletteDragEnd() }
                         )
                     }
+                } // Column
 
+                // ── Delete zone (PiP-style) ────────────────────────────────────
+                // Appears with a spring animation when a board piece is picked up.
+                // Scales and glows red when the finger hovers over it.
+                val deleteZoneScale by animateFloatAsState(
+                    targetValue = if (isHoveringDelete) 1.35f else 1f,
+                    animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f),
+                    label = "deleteZoneScale"
+                )
+                val deleteZoneAlpha by animateFloatAsState(
+                    targetValue = if (isHoveringDelete) 1f else 0.82f,
+                    label = "deleteZoneAlpha"
+                )
+
+                AnimatedVisibility(
+                    visible = isDraggingFromBoard,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 36.dp),
+                    enter = fadeIn() + scaleIn(initialScale = 0.4f, animationSpec = spring(dampingRatio = 0.6f)),
+                    exit  = fadeOut() + scaleOut(targetScale = 0.4f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .onGloballyPositioned { coords ->
+                                deleteZoneBounds = coords.boundsInWindow()
+                            }
+                            .graphicsLayer(
+                                scaleX = deleteZoneScale,
+                                scaleY = deleteZoneScale,
+                                alpha  = deleteZoneAlpha
+                            )
+                            .size(64.dp)
+                            .shadow(
+                                elevation = if (isHoveringDelete) 20.dp else 8.dp,
+                                shape = CircleShape,
+                                ambientColor = Color.Red,
+                                spotColor = Color.Red
+                            )
+                            .background(
+                                color = if (isHoveringDelete) Color(0xFFCC1111) else Color(0xFF8B1A1A),
+                                shape = CircleShape
+                            )
+                            .border(
+                                width = if (isHoveringDelete) 3.dp else 1.5.dp,
+                                color = if (isHoveringDelete) Color.White else Color.White.copy(alpha = 0.35f),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar pieza",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
 
-                // ── Floating drag overlay ─────────────────────────────────────────
-                val activeDrag = dndState.activeDrag
+                // ── Floating drag piece overlay ────────────────────────────────
                 if (activeDrag != null) {
                     val pieceRes = pieceDrawable(activeDrag.piece)
                     Image(
@@ -366,7 +418,7 @@ fun EditorScreen(
                             )
                     )
                 }
-            }
+            } // Box
         }
     }
 }

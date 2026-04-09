@@ -63,7 +63,11 @@ fun ChessBoard(
     modifier: Modifier = Modifier,
     eraserMode: Boolean = false,
     onCellTap: (row: Int, col: Int) -> Unit = { _, _ -> },
-    onDrop: (source: DragSource, toRow: Int, toCol: Int) -> Unit = { _, _, _ -> }
+    onDrop: (source: DragSource, toRow: Int, toCol: Int) -> Unit = { _, _, _ -> },
+    /** Called with final screen position when a board piece is released outside the board. */
+    onDroppedOutsideBoard: (source: DragSource.FromBoard, screenX: Float, screenY: Float) -> Unit = { _, _, _ -> },
+    /** Called with the actual board's window bounds whenever they change. */
+    onBoardBoundsChanged: (androidx.compose.ui.geometry.Rect?) -> Unit = {}
 ) {
     val dndState = LocalDragAndDropState.current
     val activeDrag by remember { derivedStateOf { dndState.activeDrag } }
@@ -84,10 +88,15 @@ fun ChessBoard(
         if (r in 0..7 && c in 0..7) r to c else null
     }
 
+    // BoxWithConstraints lets us measure available space and use the smaller dimension
+    // so the board is always square and never overflows its container.
+    BoxWithConstraints(modifier = modifier) {
+        val squareSize = minOf(maxWidth, maxHeight)
+
     Column(
-        modifier = modifier
-            .aspectRatio(1f)
-            .fillMaxWidth()
+        modifier = Modifier
+            .size(squareSize)
+            .align(Alignment.Center)
             .shadow(
                 elevation = 12.dp,
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
@@ -105,6 +114,7 @@ fun ChessBoard(
             .padding(6.dp)
             .onGloballyPositioned { coords ->
                 boardBounds = coords.boundsInWindow()
+                onBoardBoundsChanged(boardBounds)
             }
         // NOTE: No outer pointerInput here. Palette drops are handled in EditorScreen.
     ) {
@@ -192,6 +202,13 @@ fun ChessBoard(
                                                         val dropCol = ((drag.screenX - bounds.left) / cellW).toInt()
                                                         if (dropRow in 0..7 && dropCol in 0..7) {
                                                             onDrop(drag.source, dropRow, dropCol)
+                                                        } else if (drag.source is DragSource.FromBoard) {
+                                                            // Released outside the board — notify parent (e.g. delete zone)
+                                                            onDroppedOutsideBoard(
+                                                                drag.source,
+                                                                drag.screenX,
+                                                                drag.screenY
+                                                            )
                                                         }
                                                     }
                                                 } finally {
@@ -248,4 +265,5 @@ fun ChessBoard(
             }
         }
     }
+    } // BoxWithConstraints
 }
