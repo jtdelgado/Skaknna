@@ -6,11 +6,26 @@ import com.skaknna.ui.components.boardToFen
 import com.skaknna.ui.components.canPlacePiece
 import com.skaknna.ui.components.fenToBoard
 import com.skaknna.ui.components.validateBoard
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.skaknna.data.model.Board
+import com.skaknna.data.repository.BoardRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class BoardViewModel : ViewModel() {
+class BoardViewModel(private val repository: BoardRepository) : ViewModel() {
+
+    // ─── Saved Boards (from local DB) ─────────────────────────────────────────
+    val allBoards: StateFlow<List<Board>> = repository.allBoards
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     // ─── FEN string (source of truth) ─────────────────────────────────────────
     private val _fen = MutableStateFlow("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -89,6 +104,20 @@ class BoardViewModel : ViewModel() {
         updateFen("8/8/8/8/8/8/8/8 w - - 0 1")
     }
 
+    // ─── Persistence ───────────────────────────────────────────────────────────
+
+    fun saveBoard(name: String) {
+        viewModelScope.launch {
+            val board = Board(
+                name = name,
+                fen = _fen.value,
+                // userId would be set here if we had Firebase Auth implemented
+                userId = null
+            )
+            repository.saveBoard(board)
+        }
+    }
+
     // ─── Private helpers ───────────────────────────────────────────────────────
 
     private fun commitBoard(newBoard: Array<Array<Char?>>) {
@@ -99,4 +128,14 @@ class BoardViewModel : ViewModel() {
 
     private fun Array<Array<Char?>>.deepCopy(): Array<Array<Char?>> =
         Array(size) { r -> Array(this[r].size) { c -> this[r][c] } }
+}
+
+class BoardViewModelFactory(private val repository: BoardRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(BoardViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return BoardViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }

@@ -19,15 +19,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.foundation.lazy.items
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import com.skaknna.viewmodel.BoardViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
+    viewModel: BoardViewModel,
     onNavigateToScanner: () -> Unit,
     onNavigateToEditor: () -> Unit,
     onNavigateToAnalysis: () -> Unit
 ) {
     // Estado Mock para simular sesión
     var isLoggedIn by remember { mutableStateOf(false) }
+    
+    val boards by viewModel.allBoards.collectAsState()
 
     Scaffold(
         topBar = {
@@ -99,30 +108,58 @@ fun DashboardScreen(
                 bottom = 160.dp
             )
         ) {
-            items(5) { index ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .border(3.dp, com.skaknna.ui.theme.WoodDark, RoundedCornerShape(12.dp))
-                        .clickable { onNavigateToAnalysis() },
-                    colors = CardDefaults.cardColors(
-                        containerColor = com.skaknna.ui.theme.WoodMedium,
-                        contentColor = com.skaknna.ui.theme.WarmWhite
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+            if (boards.isEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 64.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            text = "Partida Guardada #${index + 1}", 
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = com.skaknna.ui.theme.GoldenYellow
+                            text = "No tienes tableros guardados.",
+                            color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.5f),
+                            style = MaterialTheme.typography.titleMedium
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Fecha: 10/10/2023", 
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = com.skaknna.ui.theme.WarmWhite
+                            text = "Pulsa el botón de abajo para empezar.",
+                            color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.4f),
+                            style = MaterialTheme.typography.bodyMedium
                         )
+                    }
+                }
+            } else {
+                val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                items(boards, key = { it.id }) { board ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .border(3.dp, com.skaknna.ui.theme.WoodDark, RoundedCornerShape(12.dp))
+                            .clickable {
+                                viewModel.updateFen(board.fen)
+                                onNavigateToAnalysis()
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = com.skaknna.ui.theme.WoodMedium,
+                            contentColor = com.skaknna.ui.theme.WarmWhite
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = board.name, 
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = com.skaknna.ui.theme.GoldenYellow
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Guardado: ${dateFormat.format(Date(board.updatedAt))}", 
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
             }

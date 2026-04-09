@@ -13,10 +13,21 @@ import androidx.compose.ui.graphics.Color
 import com.skaknna.ui.components.checkerboardBackground
 
 import androidx.activity.SystemBarStyle
+import com.skaknna.data.local.AppDatabase
+import com.skaknna.data.remote.RemoteBoardService
+import com.skaknna.data.repository.BoardRepository
+import com.skaknna.viewmodel.BoardViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize Storage
+        val database = AppDatabase.getDatabase(this)
+        val remoteService = RemoteBoardService()
+        val repository = BoardRepository(database.boardDao(), remoteService)
+        val viewModelFactory = BoardViewModelFactory(repository)
+
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
@@ -27,7 +38,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize().checkerboardBackground(),
                     containerColor = Color.Transparent
                 ) {
-                    AppNavigation(paddingValues = it)
+                    AppNavigation(paddingValues = it, viewModelFactory = viewModelFactory)
                 }
             }
         }
