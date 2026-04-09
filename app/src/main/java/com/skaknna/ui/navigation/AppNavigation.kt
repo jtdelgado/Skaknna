@@ -13,12 +13,13 @@ import com.skaknna.ui.screens.DashboardScreen
 import com.skaknna.ui.screens.EditorScreen
 import com.skaknna.ui.screens.ScannerScreen
 import com.skaknna.viewmodel.BoardViewModel
+import com.skaknna.viewmodel.BoardViewModelFactory
 
 @Composable
-fun AppNavigation(paddingValues: PaddingValues) {
+fun AppNavigation(paddingValues: PaddingValues, viewModelFactory: BoardViewModelFactory) {
     val navController = rememberNavController()
     // Shared ViewModel for the session
-    val boardViewModel: BoardViewModel = viewModel()
+    val boardViewModel: BoardViewModel = viewModel(factory = viewModelFactory)
 
     NavHost(
         navController = navController, 
@@ -27,6 +28,7 @@ fun AppNavigation(paddingValues: PaddingValues) {
     ) {
         composable("dashboard") {
             DashboardScreen(
+                viewModel = boardViewModel,
                 onNavigateToScanner = { navController.navigate("scanner") },
                 onNavigateToEditor = { navController.navigate("editor") },
                 onNavigateToAnalysis = { navController.navigate("analysis") }
@@ -47,7 +49,7 @@ fun AppNavigation(paddingValues: PaddingValues) {
             EditorScreen(
                 viewModel = boardViewModel,
                 onSaveBoard = { boardName ->
-                    // TODO: Guardar `boardName` y `fen` en la BD local o en Firebase.
+                    boardViewModel.saveBoard(boardName)
                     navController.navigate("analysis") {
                         popUpTo("editor") { inclusive = true }
                     }
