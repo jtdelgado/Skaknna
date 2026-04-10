@@ -36,7 +36,8 @@ fun AppNavigation(paddingValues: PaddingValues, viewModelFactory: BoardViewModel
         }
         composable("scanner") {
             ScannerScreen(
-                onValidationComplete = { 
+                onValidationComplete = { fen ->
+                    boardViewModel.updateFen(fen)
                     // Navigate to editor directly after scan
                     navController.navigate("editor") {
                         popUpTo("scanner") { inclusive = true }
