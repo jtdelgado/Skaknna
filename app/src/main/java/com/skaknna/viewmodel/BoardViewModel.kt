@@ -196,6 +196,23 @@ class BoardViewModel(
         }
     }
 
+    fun renameBoard(board: Board, newName: String) {
+        viewModelScope.launch {
+            val updatedBoard = board.copy(
+                name = newName,
+                updatedAt = System.currentTimeMillis(),
+                isSynced = false // Needs to sync the new name
+            )
+            repository.saveBoard(updatedBoard)
+        }
+    }
+
+    fun deleteBoard(board: Board) {
+        viewModelScope.launch {
+            repository.deleteBoard(board.id, board.userId)
+        }
+    }
+
     // ─── Stockfish Analysis ────────────────────────────────────────────────────
 
     /**

@@ -12,6 +12,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +28,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.skaknna.viewmodel.BoardViewModel
+import com.skaknna.data.model.Board
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +43,72 @@ fun DashboardScreen(
     var isLoggedIn by remember { mutableStateOf(false) }
     
     val boards by viewModel.allBoards.collectAsState()
+
+    var boardToRename by remember { mutableStateOf<Board?>(null) }
+    var boardToDelete by remember { mutableStateOf<Board?>(null) }
+
+    if (boardToRename != null) {
+        var newName by remember { mutableStateOf(boardToRename!!.name) }
+        AlertDialog(
+            onDismissRequest = { boardToRename = null },
+            title = { Text("Renombrar Tablero") },
+            text = {
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text("Nuevo nombre") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newName.isNotBlank()) {
+                            viewModel.renameBoard(boardToRename!!, newName)
+                            boardToRename = null
+                        }
+                    }
+                ) {
+                    Text("Guardar", color = com.skaknna.ui.theme.GoldenYellow)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { boardToRename = null }) {
+                    Text("Cancelar", color = com.skaknna.ui.theme.WarmWhite)
+                }
+            },
+            containerColor = com.skaknna.ui.theme.WoodDark,
+            titleContentColor = com.skaknna.ui.theme.WarmWhite,
+            textContentColor = com.skaknna.ui.theme.WarmWhite
+        )
+    }
+
+    if (boardToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { boardToDelete = null },
+            title = { Text("Eliminar Tablero") },
+            text = { Text("¿Deseas eliminar definitivamente el tablero '${boardToDelete!!.name}'?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteBoard(boardToDelete!!)
+                        boardToDelete = null
+                    }
+                ) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { boardToDelete = null }) {
+                    Text("Cancelar", color = com.skaknna.ui.theme.WarmWhite)
+                }
+            },
+            containerColor = com.skaknna.ui.theme.WoodDark,
+            titleContentColor = com.skaknna.ui.theme.WarmWhite,
+            textContentColor = com.skaknna.ui.theme.WarmWhite
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -145,6 +215,8 @@ fun DashboardScreen(
             } else {
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                 items(boards, key = { it.id }) { board ->
+                    var expanded by remember { mutableStateOf(false) }
+
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -159,19 +231,71 @@ fun DashboardScreen(
                             contentColor = com.skaknna.ui.theme.WarmWhite
                         )
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = board.name, 
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = com.skaknna.ui.theme.GoldenYellow
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Guardado: ${dateFormat.format(Date(board.updatedAt))}", 
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.8f)
-                            )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = board.name, 
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = com.skaknna.ui.theme.GoldenYellow
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Guardado: ${dateFormat.format(Date(board.updatedAt))}", 
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.8f)
+                                )
+                            }
+                            
+                            Box {
+                                IconButton(onClick = { expanded = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "Opciones",
+                                        tint = com.skaknna.ui.theme.WarmWhite
+                                    )
+                                }
+                                
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false },
+                                    modifier = Modifier.background(com.skaknna.ui.theme.WoodMedium)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Cambiar nombre", color = com.skaknna.ui.theme.WarmWhite) },
+                                        leadingIcon = { 
+                                            Icon(
+                                                Icons.Default.Edit, 
+                                                contentDescription = null,
+                                                tint = com.skaknna.ui.theme.GoldenYellow
+                                            ) 
+                                        },
+                                        onClick = {
+                                            expanded = false
+                                            boardToRename = board
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Eliminar tablero", color = MaterialTheme.colorScheme.error) },
+                                        leadingIcon = { 
+                                            Icon(
+                                                Icons.Default.Delete, 
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            ) 
+                                        },
+                                        onClick = {
+                                            expanded = false
+                                            boardToDelete = board
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
