@@ -10,6 +10,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,6 +53,7 @@ fun EditorScreen(
 
     var showSaveDialog by remember { mutableStateOf(false) }
     var boardName by remember { mutableStateOf("") }
+    var selectedTurn by remember { mutableStateOf("w") }
 
     // ─── DnD State ────────────────────────────────────────────────────────────
     val dndState = remember { DragAndDropState() }
@@ -84,26 +86,80 @@ fun EditorScreen(
                 )
             },
             text = {
-                OutlinedTextField(
-                    value = boardName,
-                    onValueChange = { boardName = it },
-                    label = { Text("Nombre de la partida") },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = com.skaknna.ui.theme.GoldenYellow,
-                        unfocusedBorderColor = com.skaknna.ui.theme.WoodMedium,
-                        focusedTextColor = com.skaknna.ui.theme.WarmWhite,
-                        unfocusedTextColor = com.skaknna.ui.theme.WarmWhite,
-                        cursorColor = com.skaknna.ui.theme.GoldenYellow,
-                        focusedLabelColor = com.skaknna.ui.theme.GoldenYellow,
-                        unfocusedLabelColor = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.7f)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedTextField(
+                        value = boardName,
+                        onValueChange = { boardName = it },
+                        label = { Text("Nombre de la partida") },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = com.skaknna.ui.theme.GoldenYellow,
+                            unfocusedBorderColor = com.skaknna.ui.theme.WoodMedium,
+                            focusedTextColor = com.skaknna.ui.theme.WarmWhite,
+                            unfocusedTextColor = com.skaknna.ui.theme.WarmWhite,
+                            cursorColor = com.skaknna.ui.theme.GoldenYellow,
+                            focusedLabelColor = com.skaknna.ui.theme.GoldenYellow,
+                            unfocusedLabelColor = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.7f)
+                        )
                     )
-                )
+
+                    Text(
+                        text = "¿Quién mueve ahora?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = com.skaknna.ui.theme.WarmWhite
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { selectedTurn = "w" }) {
+                            RadioButton(
+                                selected = selectedTurn == "w",
+                                onClick = { selectedTurn = "w" },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = com.skaknna.ui.theme.GoldenYellow,
+                                    unselectedColor = com.skaknna.ui.theme.WoodMedium
+                                )
+                            )
+                            Text("Blancas", color = com.skaknna.ui.theme.WarmWhite)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { selectedTurn = "b" }) {
+                            RadioButton(
+                                selected = selectedTurn == "b",
+                                onClick = { selectedTurn = "b" },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = com.skaknna.ui.theme.GoldenYellow,
+                                    unselectedColor = com.skaknna.ui.theme.WoodMedium
+                                )
+                            )
+                            Text("Negras", color = com.skaknna.ui.theme.WarmWhite)
+                        }
+                    }
+                }
             },
             containerColor = com.skaknna.ui.theme.WoodDark,
             confirmButton = {
                 TextButton(
-                    onClick = { showSaveDialog = false; onSaveBoard(boardName) },
+                    onClick = { 
+                        showSaveDialog = false
+                        val parts = fen.split(" ").toMutableList()
+                        if (parts.isNotEmpty()) {
+                            if (parts.size == 1) {
+                                parts.addAll(listOf("w", "KQkq", "-", "0", "1"))
+                            }
+                            parts[1] = selectedTurn
+                            val newFen = parts.joinToString(" ")
+                            if (newFen != fen) {
+                                viewModel.updateFen(newFen)
+                            }
+                        }
+                        onSaveBoard(boardName)
+                    },
                     enabled = boardName.isNotBlank()
                 ) {
                     Text(
@@ -196,7 +252,11 @@ fun EditorScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { showSaveDialog = true }) {
+                        IconButton(onClick = { 
+                            val parts = fen.split(" ")
+                            selectedTurn = if (parts.size >= 2 && parts[1] == "b") "b" else "w"
+                            showSaveDialog = true 
+                        }) {
                             Icon(
                                 Icons.Default.Save,
                                 contentDescription = "Guardar Tablero",

@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
@@ -108,6 +109,15 @@ fun ScannerScreen(
     // AI Vision Setup
     val visionManager = remember { ChessVisionManager(BuildConfig.GEMINI_API_KEY) }
     var visionState by remember { mutableStateOf<VisionState>(VisionState.Idle) }
+
+    // FEN Completion Dialog State
+    var showFenCompletionDialog by remember { mutableStateOf(false) }
+    var geminiGeneratedFen by remember { mutableStateOf("") }
+    var selectedTurn by remember { mutableStateOf("w") } // "w" for white, "b" for black
+    var canCastleKingside by remember { mutableStateOf(true) }
+    var canCastleQueenside by remember { mutableStateOf(true) }
+    var canCastleKingsideBlack by remember { mutableStateOf(true) }
+    var canCastleQueensideBlack by remember { mutableStateOf(true) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -220,7 +230,14 @@ fun ScannerScreen(
                                         visionState = result
                                         
                                         if (result is VisionState.Success) {
-                                            onValidationComplete(result.fen)
+                                            geminiGeneratedFen = result.fen
+                                            // Reset dialog state for new FEN
+                                            selectedTurn = "w"
+                                            canCastleKingside = true
+                                            canCastleQueenside = true
+                                            canCastleKingsideBlack = true
+                                            canCastleQueensideBlack = true
+                                            showFenCompletionDialog = true
                                         }
                                     }
                                 }
@@ -368,4 +385,203 @@ fun ScannerScreen(
             }
         }
     }
+
+    // FEN Completion Dialog
+    if (showFenCompletionDialog) {
+        FenCompletionDialog(
+            geminiGeneratedFen = geminiGeneratedFen,
+            onConfirm = { completeFen ->
+                showFenCompletionDialog = false
+                onValidationComplete(completeFen)
+            },
+            onDismiss = {
+                showFenCompletionDialog = false
+                visionState = VisionState.Idle
+                capturedImageUri = null
+            },
+            selectedTurn = selectedTurn,
+            onTurnChange = { selectedTurn = it },
+            canCastleKingside = canCastleKingside,
+            onCastleKingsideChange = { canCastleKingside = it },
+            canCastleQueenside = canCastleQueenside,
+            onCastleQueensideChange = { canCastleQueenside = it },
+            canCastleKingsideBlack = canCastleKingsideBlack,
+            onCastleKingsideBlackChange = { canCastleKingsideBlack = it },
+            canCastleQueensideBlack = canCastleQueensideBlack,
+            onCastleQueensideBlackChange = { canCastleQueensideBlack = it }
+        )
+    }
+}
+
+/**
+ * Dialog for completing FEN information after Gemini analysis.
+ * Allows user to specify turn and castling rights.
+ */
+@Composable
+private fun FenCompletionDialog(
+    geminiGeneratedFen: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+    selectedTurn: String,
+    onTurnChange: (String) -> Unit,
+    canCastleKingside: Boolean,
+    onCastleKingsideChange: (Boolean) -> Unit,
+    canCastleQueenside: Boolean,
+    onCastleQueensideChange: (Boolean) -> Unit,
+    canCastleKingsideBlack: Boolean,
+    onCastleKingsideBlackChange: (Boolean) -> Unit,
+    canCastleQueensideBlack: Boolean,
+    onCastleQueensideBlackChange: (Boolean) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Completar Información del Tablero") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Turn Selection
+                Text(
+                    "¿De quién es el turno?",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedTurn == "w",
+                            onClick = { onTurnChange("w") }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Blancas")
+                    }
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedTurn == "b",
+                            onClick = { onTurnChange("b") }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Negras")
+                    }
+                }
+
+                Divider()
+
+                // Castling Rights
+                Text(
+                    "Derechos de Enroque",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+
+                // White Castling
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = canCastleKingside,
+                            onCheckedChange = onCastleKingsideChange
+                        )
+                        Text("Blancas (flanco rey)")
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = canCastleQueenside,
+                            onCheckedChange = onCastleQueensideChange
+                        )
+                        Text("Blancas (flanco dama)")
+                    }
+                }
+
+                // Black Castling
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = canCastleKingsideBlack,
+                            onCheckedChange = onCastleKingsideBlackChange
+                        )
+                        Text("Negras (flanco rey)")
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = canCastleQueensideBlack,
+                            onCheckedChange = onCastleQueensideBlackChange
+                        )
+                        Text("Negras (flanco dama)")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    // Construct castling rights string
+                    val castlingRights = buildString {
+                        if (canCastleKingside) append("K")
+                        if (canCastleQueenside) append("Q")
+                        if (canCastleKingsideBlack) append("k")
+                        if (canCastleQueensideBlack) append("q")
+                        if (isEmpty()) append("-")
+                    }
+
+                    // Extract position part from Gemini FEN (first part before metadata)
+                    val positionPart = geminiGeneratedFen.split(" ").firstOrNull() ?: geminiGeneratedFen
+
+                    // Construct complete FEN: position turn castling - halfmove fullmove
+                    val completeFen = "$positionPart $selectedTurn $castlingRights - 0 1"
+
+                    onConfirm(completeFen)
+                }
+            ) {
+                Text("Confirmar")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

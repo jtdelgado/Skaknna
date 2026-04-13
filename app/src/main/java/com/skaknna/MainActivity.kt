@@ -17,6 +17,8 @@ import com.skaknna.data.local.AppDatabase
 import com.skaknna.data.remote.RemoteBoardService
 import com.skaknna.data.repository.BoardRepository
 import com.skaknna.viewmodel.BoardViewModelFactory
+import com.skaknna.viewmodel.SettingsViewModelFactory
+import com.skaknna.viewmodel.SettingsViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +28,11 @@ class MainActivity : ComponentActivity() {
         val database = AppDatabase.getDatabase(this)
         val remoteService = RemoteBoardService()
         val repository = BoardRepository(database.boardDao(), remoteService)
-        val viewModelFactory = BoardViewModelFactory(repository)
+        
+        // Initialize ViewModelFactories
+        val settingsViewModelFactory = SettingsViewModelFactory(this)
+        val settingsViewModel = settingsViewModelFactory.create(SettingsViewModel::class.java) as SettingsViewModel
+        val viewModelFactory = BoardViewModelFactory(repository, settingsViewModel, this)
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
@@ -38,7 +44,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize().checkerboardBackground(),
                     containerColor = Color.Transparent
                 ) {
-                    AppNavigation(paddingValues = it, viewModelFactory = viewModelFactory)
+                    AppNavigation(
+                        paddingValues = it,
+                        boardViewModelFactory = viewModelFactory,
+                        settingsViewModelFactory = settingsViewModelFactory
+                    )
                 }
             }
         }

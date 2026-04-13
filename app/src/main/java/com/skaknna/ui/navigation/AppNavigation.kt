@@ -12,14 +12,22 @@ import com.skaknna.ui.screens.AnalysisScreen
 import com.skaknna.ui.screens.DashboardScreen
 import com.skaknna.ui.screens.EditorScreen
 import com.skaknna.ui.screens.ScannerScreen
+import com.skaknna.ui.screens.SettingsScreen
 import com.skaknna.viewmodel.BoardViewModel
 import com.skaknna.viewmodel.BoardViewModelFactory
+import com.skaknna.viewmodel.SettingsViewModel
+import com.skaknna.viewmodel.SettingsViewModelFactory
 
 @Composable
-fun AppNavigation(paddingValues: PaddingValues, viewModelFactory: BoardViewModelFactory) {
+fun AppNavigation(
+    paddingValues: PaddingValues,
+    boardViewModelFactory: BoardViewModelFactory,
+    settingsViewModelFactory: SettingsViewModelFactory
+) {
     val navController = rememberNavController()
-    // Shared ViewModel for the session
-    val boardViewModel: BoardViewModel = viewModel(factory = viewModelFactory)
+    // Shared ViewModels for the session
+    val boardViewModel: BoardViewModel = viewModel(factory = boardViewModelFactory)
+    val settingsViewModel: SettingsViewModel = viewModel(factory = settingsViewModelFactory)
 
     NavHost(
         navController = navController, 
@@ -31,7 +39,8 @@ fun AppNavigation(paddingValues: PaddingValues, viewModelFactory: BoardViewModel
                 viewModel = boardViewModel,
                 onNavigateToScanner = { navController.navigate("scanner") },
                 onNavigateToEditor = { navController.navigate("editor") },
-                onNavigateToAnalysis = { navController.navigate("analysis") }
+                onNavigateToAnalysis = { navController.navigate("analysis") },
+                onNavigateToSettings = { navController.navigate("settings") }
             )
         }
         composable("scanner") {
@@ -61,6 +70,13 @@ fun AppNavigation(paddingValues: PaddingValues, viewModelFactory: BoardViewModel
         composable("analysis") {
             AnalysisScreen(
                 viewModel = boardViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSettings = { navController.navigate("settings") }
+            )
+        }
+        composable("settings") {
+            SettingsScreen(
+                viewModel = settingsViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
