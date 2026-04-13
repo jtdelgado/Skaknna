@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,7 +32,8 @@ fun DashboardScreen(
     viewModel: BoardViewModel,
     onNavigateToScanner: () -> Unit,
     onNavigateToEditor: () -> Unit,
-    onNavigateToAnalysis: () -> Unit
+    onNavigateToAnalysis: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     // Estado Mock para simular sesión
     var isLoggedIn by remember { mutableStateOf(false) }
@@ -44,6 +46,17 @@ fun DashboardScreen(
                 title = { Text("Tableros Guardados", color = com.skaknna.ui.theme.GoldenYellow, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor),
                 actions = {
+                    IconButton(
+                        onClick = onNavigateToSettings,
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Ajustes",
+                            tint = com.skaknna.ui.theme.WarmWhite,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                     IconButton(
                         onClick = { isLoggedIn = !isLoggedIn },
                         modifier = Modifier.padding(end = 8.dp)

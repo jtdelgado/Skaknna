@@ -43,8 +43,8 @@ class BoardViewModel(
     private var stockfishInitialized = false
     private var analysisJob: Job? = null
     private val analysisMutex = Mutex()
+    private var initAttempts = 0
     private val MAX_INIT_ATTEMPTS = 3
-    private var inAnalysisScreen = false  // Flag to suppress auto-analysis during FEN updates
 
     // ─── Analysis State ────────────────────────────────────────────────────────
     private val _bestMove = MutableStateFlow("")
@@ -81,13 +81,12 @@ class BoardViewModel(
 
     init {
         // Auto-trigger analysis when FEN changes (with debounce)
-        // ONLY if Stockfish has been manually initialized AND we're in AnalysisScreen
-        // (prevents double-analysis when switching between boards)
+        // ONLY if Stockfish has been manually initialized
         viewModelScope.launch {
             _fen
                 .debounce(200) // Wait 200ms for rapid FEN changes to settle
                 .collectLatest { fen ->
-                    if (stockfishInitialized && fen.isNotBlank() && inAnalysisScreen) {
+                    if (stockfishInitialized && fen.isNotBlank()) {
                         triggerAnalysis(fen)
                     }
                 }
@@ -107,14 +106,34 @@ class BoardViewModel(
         }
     }
 
-
-    // ─── Screen Navigation ──────────────────────────────────────────────────────
-    fun enterAnalysisScreen() {
-        inAnalysisScreen = true
-    }
-
-    fun exitAnalysisScreen() {
-        inAnalysisScreen = false
+    private fun initStockfishWithRetry() {
+        viewModelScope.launch {
+            while (initAttempts < MAX_INIT_ATTEMPTS && !stockfishInitialized) {
+                initAttempts++
+                Log.d(TAG, "=== Initializing Stockfish (attempt $initAttempts/$MAX_INIT_ATTEMPTS) ===")
+                
+                val error = stockfishManager.startEngine()
+                if (error != null) {
+                    Log.w(TAG, "WARNING: Failed to initialize Stockfish (attempt $initAttempts): $error")
+                    if (initAttempts < MAX_INIT_ATTEMPTS) {
+                        // Exponential backoff: 500ms, 1000ms, 2000ms
+                        val delayMs = 500L * (1L shl (initAttempts - 1))
+                        Log.d(TAG, "Retrying after ${delayMs}ms...")
+                        delay(delayMs)
+                    }
+                } else {
+                    stockfishInitialized = true
+                    Log.d(TAG, "OK: Stockfish initialized successfully on attempt $initAttempts")
+                    // Trigger analysis immediately after successful initialization
+                    triggerAnalysis(_fen.value)
+                    break
+                }
+            }
+            
+            if (!stockfishInitialized) {
+                Log.e(TAG, "ERROR: Failed to initialize Stockfish after $MAX_INIT_ATTEMPTS attempts")
+            }
+        }
     }
 
     // ─── FEN text input (can be typed directly) ────────────────────────────────
@@ -249,6 +268,8 @@ class BoardViewModel(
         
         if (!stockfishInitialized) {
             Log.d(TAG, "Stockfish not initialized, attempting to initialize for analysis...")
+            // Reset attempt counter to allow fresh initialization
+            initAttempts = 0
             ensureStockfishInitialized()
             // Give it time to initialize, then trigger analysis
             viewModelScope.launch {
@@ -318,21 +339,6 @@ class BoardViewModel(
                         _bestMove.value = ""
                         _evaluation.value = 0f
                         _analysisLine.value = ""
-                        
-                        // Check if the engine actually crashed
-                        if (!stockfishManager.isEngineReady) {
-                            Log.w(TAG, "Engine crashed. Forcing restart...")
-                            stockfishInitialized = false // Reset our local flag
-                            ensureStockfishInitialized() // Automatically reboot
-                            
-                            // Re-trigger the analysis once it's back up
-                            viewModelScope.launch {
-                                kotlinx.coroutines.delay(1000)
-                                if (stockfishInitialized) {
-                                    triggerAnalysis(fen)
-                                }
-                            }
-                        }
                     }
                 } catch (e: CancellationException) {
                     Log.d(TAG, "INFO: Analysis was cancelled")

@@ -80,4 +80,7 @@ dependencies {
     
     // Gemini AI
     implementation(libs.generativeai)
+    
+    // DataStore Preferences
+    implementation(libs.androidx.datastore.preferences)
 }
