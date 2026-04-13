@@ -16,6 +16,7 @@ import com.skaknna.viewmodel.BoardViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Refresh
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +66,13 @@ fun AnalysisScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor),
                 actions = {
+                    IconButton(onClick = { viewModel.analyzeCurrentPosition() }) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Reiniciar Análisis",
+                            tint = com.skaknna.ui.theme.GoldenYellow
+                        )
+                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,
