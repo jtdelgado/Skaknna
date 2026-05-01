@@ -1,3 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App Name -->
     <string name="app_name">Skaknna</string>
+
+    <!-- ==================== SCREEN TITLES ==================== -->
+    <string name="screen_title_analysis">Análisis Táctico</string>
+    <string name="screen_title_scanner">Escanear Tablero</string>
+    <string name="screen_title_dashboard">Tableros Guardados</string>
+    <string name="screen_title_editor">Editor de Tablero</string>
+    <string name="screen_title_settings">Ajustes</string>
+
+    <!-- ==================== COMMON BUTTONS ==================== -->
+    <string name="button_back">Atrás</string>
+    <string name="button_settings">Ajustes</string>
+    <string name="button_refresh">Reiniciar Análisis</string>
+    <string name="button_cancel">Cancelar</string>
+    <string name="button_save">Guardar</string>
+    <string name="button_delete">Eliminar</string>
+    <string name="button_confirm">Confirmar</string>
+    <string name="button_retry">Reintentar</string>
+    <string name="button_capture">Capturar</string>
+    <string name="button_gallery">Galería</string>
+
+    <!-- ==================== ANALYSIS SCREEN ==================== -->
+    <string name="analysis_best_moves_section">Mejores Movimientos (Stockfish 18)</string>
+    <string name="analysis_best_move_label">Mejor Movimiento</string>
+    <string name="analysis_principal_variation">Variante Principal</string>
+    <string name="analysis_analyzing">Analizando posición…</string>
+    <string name="analysis_not_available">Análisis no disponible</string>
+
+    <!-- ==================== SCANNER SCREEN ==================== -->
+    <string name="scanner_analyzing_ai">Analizando pieza por pieza con IA…</string>
+    <string name="scanner_captured_image">Foto capturada</string>
+    <string name="scanner_analyze_button">Analizar Imagen</string>
+    <string name="scanner_analyze_desc">Analizar</string>
+    <string name="scanner_board_completion_dialog">Completar Información del Tablero</string>
+    <string name="scanner_whose_turn">¿De quién es el turno?</string>
+    <string name="scanner_castling_rights">Derechos de Enroque</string>
+    <string name="scanner_camera_permission">Se requiere permiso de cámara para escanear el tablero.</string>
+
+    <!-- ==================== TURN AND CASTLING ==================== -->
+    <string name="color_white">Blancas</string>
+    <string name="color_black">Negras</string>
+    <string name="castling_white_kingside">Blancas (flanco rey)</string>
+    <string name="castling_white_queenside">Blancas (flanco dama)</string>
+    <string name="castling_black_kingside">Negras (flanco rey)</string>
+    <string name="castling_black_queenside">Negras (flanco dama)</string>
+
+    <!-- ==================== DASHBOARD SCREEN ==================== -->
+    <string name="dashboard_rename_dialog">Renombrar Tablero</string>
+    <string name="dashboard_new_board_name">Nuevo nombre</string>
+    <string name="dashboard_delete_dialog">Eliminar Tablero</string>
+    <string name="dashboard_no_boards">No tienes tableros guardados.</string>
+    <string name="dashboard_empty_hint">Pulsa el botón de abajo para empezar.</string>
+    <string name="dashboard_camera_button">Escanear con Cámara</string>
+    <string name="dashboard_camera_desc">Cámara</string>
+    <string name="dashboard_new_board_button">Nuevo Tablero Manual</string>
+    <string name="dashboard_new_board_desc">Nuevo</string>
+    <string name="dashboard_login_button">Iniciar Sesión</string>
+    <string name="dashboard_options_desc">Opciones</string>
+    <string name="dashboard_rename_menu">Cambiar nombre</string>
+    <string name="dashboard_delete_menu">Eliminar tablero</string>
+    <string name="dashboard_saved_format">Guardado: %1$s</string>
+    <string name="dashboard_google_avatar">G</string>
+
+    <!-- ==================== SETTINGS SCREEN ==================== -->
+    <string name="settings_time_less_than_one">Menos de 1 segundo</string>
+    <string name="settings_time_one_to_two">1-2 segundos</string>
+    <string name="settings_time_two_to_five">2-5 segundos</string>
+    <string name="settings_time_five_to_ten">5-10 segundos</string>
+    <string name="settings_time_more_than_ten">Más de 10 segundos</string>
+
+    <!-- ==================== DATE FORMAT ==================== -->
+    <string name="date_format">dd/MM/yyyy HH:mm</string>
+
+    <!-- ==================== CONTENT DESCRIPTIONS ==================== -->
+    <string name="cd_back_navigation">Atrás</string>
+    <string name="cd_refresh">Actualizar</string>
+    <string name="cd_settings">Configuración</string>
+    <string name="cd_camera">Cámara</string>
+    <string name="cd_gallery">Galería</string>
+    <string name="cd_captured_photo">Foto capturada</string>
+
+    <!-- ==================== EDITOR SCREEN ==================== -->
+    <string name="editor_save_dialog_title">Guardar Tablero</string>
+    <string name="editor_game_name_label">Nombre de la partida</string>
+    <string name="editor_whose_turn_label">¿Quién mueve ahora?</string>
+    <string name="editor_save_button">Guardar</string>
+    <string name="editor_back_button">Atrás</string>
+    <string name="editor_clear_button">Limpiar</string>
+    <string name="editor_reset_button">Reiniciar</string>
+    <string name="editor_delete_piece_button">Eliminar pieza</string>
+
+    <!-- ==================== FEN INPUT ==================== -->
+    <string name="fen_input_label">Posición FEN</string>
+
+    <!-- ==================== SETTINGS SCREEN TITLES ==================== -->
+    <string name="settings_title">Configuración</string>
+    <string name="settings_chess_analysis_section">Análisis de Ajedrez</string>
+    <string name="settings_analysis_depth_label">Profundidad de análisis:</string>
+
+    <!-- ==================== CHESS BOARD STATE WARNINGS ==================== -->
+    <string name="warning_white_no_king">Las blancas no tienen rey</string>
+    <string name="warning_white_multiple_kings">Las blancas tienen más de un rey</string>
+    <string name="warning_black_no_king">Las negras no tienen rey</string>
+    <string name="warning_black_multiple_kings">Las negras tienen más de un rey</string>
+    <string name="warning_white_pawn_rank8">Peón blanco en fila de coronación</string>
+    <string name="warning_white_pawn_rank1">Peón blanco en primera fila</string>
+    <string name="warning_black_pawn_rank8">Peón negro en fila de coronación</string>
+    <string name="warning_black_pawn_rank1">Peón negro en primera fila</string>
+    <string name="warning_white_pawns_count">Demasiados peones blancos (%1$d)</string>
+    <string name="warning_black_pawns_count">Demasiados peones negros (%1$d)</string>
+
+    <!-- ==================== DASHBOARD DELETE CONFIRMATION ==================== -->
+    <string name="dashboard_delete_confirmation">¿Deseas eliminar definitivamente el tablero \'%1$s\'?</string>
+
+    <!-- ==================== VALIDATION DIALOG ==================== -->
+    <string name="validation_invalid_position">⚠ Posición no válida</string>
+
+    <!-- ==================== EDITOR SCREEN ==================== -->
+    <string name="editor_title">Editor FEN</string>
+    <string name="editor_piece_limit_badge">MAX</string>
+
+    <!-- ==================== SETTINGS DEPTH EXPLANATIONS ==================== -->
+    <string name="settings_depth_instant">Análisis instantáneo. Ideal para detectar errores graves de inmediato.</string>
+    <string name="settings_depth_fast">Análisis rápido. Nivel de Gran Maestro, perfecto para juego fluido.</string>
+    <string name="settings_depth_advanced">Análisis avanzado. Evalúa variantes estratégicas con gran precisión.</string>
+    <string name="settings_depth_deep">Análisis profundo. Detecta sutilezas que solo los mejores motores ven.</string>
+    <string name="settings_depth_max">Análisis de máxima precisión. Fuerza bruta total para posiciones críticas.</string>
+
+    <!-- ==================== SETTINGS DEPTH ICONS ==================== -->
+    <string name="settings_depth_fast_icon">🔋 Rápido</string>
+    <string name="settings_depth_balanced_icon">⚖️ Balanceado</string>
+    <string name="settings_depth_deep_icon">🧠 Profundo</string>
+
+    <!-- ==================== PIECE DESCRIPTIONS ==================== -->
+    <string name="piece_white_description">Pieza blanca %1$s</string>
+    <string name="piece_black_description">Pieza negra %1$s</string>
+    <string name="piece_generic_description">Pieza %1$s</string>
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_welcome">Bienvenido a Skaknna</string>
+    <string name="login_description">Inicia sesión con tu cuenta de Google para guardar tus análisis en la nube y acceder desde cualquier dispositivo.</string>
+    <string name="login_feature_1_title">Análisis Sincronizado</string>
+    <string name="login_feature_1_desc">Accede a todos tus tableros desde cualquier dispositivo</string>
+    <string name="login_feature_2_title">Datos en la Nube</string>
+    <string name="login_feature_2_desc">Respaldo automático de tu progreso y análisis</string>
+    <string name="login_feature_3_title">Seguridad Google</string>
+    <string name="login_feature_3_desc">Protección con los estándares de seguridad de Google</string>
+    <string name="login_privacy_notice">Tu información está protegida por Google. Nunca compartimos datos con terceros.</string>
+
 </resources>

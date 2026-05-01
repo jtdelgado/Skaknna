@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ==================== SCREEN TITLES ==================== -->
+    <string name="screen_title_analysis">Tactical Analysis</string>
+    <string name="screen_title_scanner">Scan Board</string>
+    <string name="screen_title_dashboard">Saved Boards</string>
+    <string name="screen_title_editor">Board Editor</string>
+    <string name="screen_title_settings">Settings</string>
+
+    <!-- ==================== COMMON BUTTONS ==================== -->
+    <string name="button_back">Back</string>
+    <string name="button_settings">Settings</string>
+    <string name="button_refresh">Restart Analysis</string>
+    <string name="button_cancel">Cancel</string>
+    <string name="button_save">Save</string>
+    <string name="button_delete">Delete</string>
+    <string name="button_confirm">Confirm</string>
+    <string name="button_retry">Retry</string>
+    <string name="button_capture">Capture</string>
+    <string name="button_gallery">Gallery</string>
+
+    <!-- ==================== ANALYSIS SCREEN ==================== -->
+    <string name="analysis_best_moves_section">Best Moves (Stockfish 18)</string>
+    <string name="analysis_best_move_label">Best Move</string>
+    <string name="analysis_principal_variation">Principal Variation</string>
+    <string name="analysis_analyzing">Analyzing position…</string>
+    <string name="analysis_not_available">Analysis not available</string>
+
+    <!-- ==================== SCANNER SCREEN ==================== -->
+    <string name="scanner_analyzing_ai">Analyzing piece by piece with AI…</string>
+    <string name="scanner_captured_image">Captured Photo</string>
+    <string name="scanner_analyze_button">Analyze Image</string>
+    <string name="scanner_analyze_desc">Analyze</string>
+    <string name="scanner_board_completion_dialog">Complete Board Information</string>
+    <string name="scanner_whose_turn">Whose turn is it?</string>
+    <string name="scanner_castling_rights">Castling Rights</string>
+    <string name="scanner_camera_permission">Camera permission is required to scan the board.</string>
+
+    <!-- ==================== TURN AND CASTLING ==================== -->
+    <string name="color_white">White</string>
+    <string name="color_black">Black</string>
+    <string name="castling_white_kingside">White (kingside)</string>
+    <string name="castling_white_queenside">White (queenside)</string>
+    <string name="castling_black_kingside">Black (kingside)</string>
+    <string name="castling_black_queenside">Black (queenside)</string>
+
+    <!-- ==================== DASHBOARD SCREEN ==================== -->
+    <string name="dashboard_rename_dialog">Rename Board</string>
+    <string name="dashboard_new_board_name">New name</string>
+    <string name="dashboard_delete_dialog">Delete Board</string>
+    <string name="dashboard_no_boards">You have no saved boards.</string>
+    <string name="dashboard_empty_hint">Press the button below to start.</string>
+    <string name="dashboard_camera_button">Scan with Camera</string>
+    <string name="dashboard_camera_desc">Camera</string>
+    <string name="dashboard_new_board_button">New Manual Board</string>
+    <string name="dashboard_new_board_desc">New</string>
+    <string name="dashboard_login_button">Sign In</string>
+    <string name="dashboard_options_desc">Options</string>
+    <string name="dashboard_rename_menu">Rename</string>
+    <string name="dashboard_delete_menu">Delete board</string>
+    <string name="dashboard_saved_format">Saved: %1$s</string>
+    <string name="dashboard_google_avatar">G</string>
+
+    <!-- ==================== SETTINGS SCREEN ==================== -->
+    <string name="settings_time_less_than_one">Less than 1 second</string>
+    <string name="settings_time_one_to_two">1-2 seconds</string>
+    <string name="settings_time_two_to_five">2-5 seconds</string>
+    <string name="settings_time_five_to_ten">5-10 seconds</string>
+    <string name="settings_time_more_than_ten">More than 10 seconds</string>
+
+    <!-- ==================== DATE FORMAT ==================== -->
+    <string name="date_format">MM/dd/yyyy HH:mm</string>
+
+    <!-- ==================== CONTENT DESCRIPTIONS ==================== -->
+    <string name="cd_back_navigation">Back</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_camera">Camera</string>
+    <string name="cd_gallery">Gallery</string>
+    <string name="cd_captured_photo">Captured photo</string>
+
+    <!-- ==================== EDITOR SCREEN ==================== -->
+    <string name="editor_save_dialog_title">Save Board</string>
+    <string name="editor_game_name_label">Game name</string>
+    <string name="editor_whose_turn_label">Whose turn is it?</string>
+    <string name="editor_save_button">Save</string>
+    <string name="editor_back_button">Back</string>
+    <string name="editor_clear_button">Clear</string>
+    <string name="editor_reset_button">Reset</string>
+    <string name="editor_delete_piece_button">Delete piece</string>
+
+    <!-- ==================== FEN INPUT ==================== -->
+    <string name="fen_input_label">FEN Position</string>
+
+    <!-- ==================== SETTINGS SCREEN TITLES ==================== -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_chess_analysis_section">Chess Analysis</string>
+    <string name="settings_analysis_depth_label">Analysis depth:</string>
+
+    <!-- ==================== CHESS BOARD STATE WARNINGS ==================== -->
+    <string name="warning_white_no_king">White has no king</string>
+    <string name="warning_white_multiple_kings">White has more than one king</string>
+    <string name="warning_black_no_king">Black has no king</string>
+    <string name="warning_black_multiple_kings">Black has more than one king</string>
+    <string name="warning_white_pawn_rank8">White pawn on promotion rank</string>
+    <string name="warning_white_pawn_rank1">White pawn on first rank</string>
+    <string name="warning_black_pawn_rank8">Black pawn on promotion rank</string>
+    <string name="warning_black_pawn_rank1">Black pawn on first rank</string>
+    <string name="warning_white_pawns_count">Too many white pawns (%1$d)</string>
+    <string name="warning_black_pawns_count">Too many black pawns (%1$d)</string>
+
+    <!-- ==================== PIECE DESCRIPTIONS ==================== -->
+    <string name="piece_white_description">White piece %1$s</string>
+    <string name="piece_black_description">Black piece %1$s</string>
+    <string name="piece_generic_description">Piece %1$s</string>
+
+    <!-- ==================== DASHBOARD DELETE CONFIRMATION ==================== -->
+    <string name="dashboard_delete_confirmation">Do you want to permanently delete the board \'%1$s\'?</string>
+
+    <!-- ==================== VALIDATION DIALOG ==================== -->
+    <string name="validation_invalid_position">⚠ Invalid Position</string>
+
+    <!-- ==================== EDITOR SCREEN ==================== -->
+    <string name="editor_title">FEN Editor</string>
+    <string name="editor_piece_limit_badge">MAX</string>
+
+    <!-- ==================== SETTINGS DEPTH EXPLANATIONS ==================== -->
+    <string name="settings_depth_instant">Instant analysis. Ideal for detecting serious errors immediately.</string>
+    <string name="settings_depth_fast">Fast analysis. Grandmaster level, perfect for fluid gameplay.</string>
+    <string name="settings_depth_advanced">Advanced analysis. Evaluates strategic variants with great precision.</string>
+    <string name="settings_depth_deep">Deep analysis. Detects subtleties that only the best engines see.</string>
+    <string name="settings_depth_max">Maximum precision analysis. Full brute force for critical positions.</string>
+
+    <!-- ==================== SETTINGS DEPTH ICONS ==================== -->
+    <string name="settings_depth_fast_icon">🔋 Fast</string>
+    <string name="settings_depth_balanced_icon">⚖️ Balanced</string>
+    <string name="settings_depth_deep_icon">🧠 Deep</string>
+
+    <!-- ==================== LOGIN SCREEN ==================== -->
+    <string name="login_title">Sign In</string>
+    <string name="login_welcome">Welcome to Skaknna</string>
+    <string name="login_description">Sign in with your Google account to save your analysis in the cloud and access it from any device.</string>
+    <string name="login_feature_1_title">Synchronized Analysis</string>
+    <string name="login_feature_1_desc">Access all your boards from any device</string>
+    <string name="login_feature_2_title">Cloud Data</string>
+    <string name="login_feature_2_desc">Automatic backup of your progress and analysis</string>
+    <string name="login_feature_3_title">Google Security</string>
+    <string name="login_feature_3_desc">Protection with Google\'s security standards</string>
+    <string name="login_privacy_notice">Your information is protected by Google. We never share data with third parties.</string>
+
+</resources>

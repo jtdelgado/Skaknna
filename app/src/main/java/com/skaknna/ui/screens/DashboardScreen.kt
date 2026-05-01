@@ -29,6 +29,8 @@ import java.util.Date
 import java.util.Locale
 import com.skaknna.viewmodel.BoardViewModel
 import com.skaknna.data.model.Board
+import androidx.compose.ui.res.stringResource
+import com.skaknna.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,12 +53,12 @@ fun DashboardScreen(
         var newName by remember { mutableStateOf(boardToRename!!.name) }
         AlertDialog(
             onDismissRequest = { boardToRename = null },
-            title = { Text("Renombrar Tablero") },
+            title = { Text(stringResource(id = R.string.dashboard_rename_dialog)) },
             text = {
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    label = { Text("Nuevo nombre") },
+                    label = { Text(stringResource(id = R.string.dashboard_new_board_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -70,12 +72,12 @@ fun DashboardScreen(
                         }
                     }
                 ) {
-                    Text("Guardar", color = com.skaknna.ui.theme.GoldenYellow)
+                    Text(stringResource(id = R.string.button_save), color = com.skaknna.ui.theme.GoldenYellow)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { boardToRename = null }) {
-                    Text("Cancelar", color = com.skaknna.ui.theme.WarmWhite)
+                    Text(stringResource(id = R.string.button_cancel), color = com.skaknna.ui.theme.WarmWhite)
                 }
             },
             containerColor = com.skaknna.ui.theme.WoodDark,
@@ -87,8 +89,8 @@ fun DashboardScreen(
     if (boardToDelete != null) {
         AlertDialog(
             onDismissRequest = { boardToDelete = null },
-            title = { Text("Eliminar Tablero") },
-            text = { Text("¿Deseas eliminar definitivamente el tablero '${boardToDelete!!.name}'?") },
+            title = { Text(stringResource(id = R.string.dashboard_delete_dialog)) },
+            text = { Text(stringResource(id = R.string.dashboard_delete_confirmation, boardToDelete!!.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -96,12 +98,12 @@ fun DashboardScreen(
                         boardToDelete = null
                     }
                 ) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.button_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { boardToDelete = null }) {
-                    Text("Cancelar", color = com.skaknna.ui.theme.WarmWhite)
+                    Text(stringResource(id = R.string.button_cancel), color = com.skaknna.ui.theme.WarmWhite)
                 }
             },
             containerColor = com.skaknna.ui.theme.WoodDark,
@@ -113,7 +115,7 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tableros Guardados", color = com.skaknna.ui.theme.GoldenYellow, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium) },
+                title = { Text(stringResource(id = R.string.screen_title_dashboard), color = com.skaknna.ui.theme.GoldenYellow, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor),
                 actions = {
                     IconButton(
@@ -122,7 +124,7 @@ fun DashboardScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Ajustes",
+                            contentDescription = stringResource(id = R.string.button_settings),
                             tint = com.skaknna.ui.theme.WarmWhite,
                             modifier = Modifier.size(28.dp)
                         )
@@ -147,7 +149,7 @@ fun DashboardScreen(
                             // Usuario desconocido
                             Icon(
                                 imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Iniciar Sesión",
+                                contentDescription = stringResource(id = R.string.dashboard_login_button),
                                 tint = com.skaknna.ui.theme.WarmWhite,
                                 modifier = Modifier.size(36.dp)
                             )
@@ -160,8 +162,8 @@ fun DashboardScreen(
             Column {
                 ExtendedFloatingActionButton(
                     onClick = onNavigateToScanner,
-                    icon = { Icon(Icons.Default.CameraAlt, contentDescription = "Cámara") },
-                    text = { Text("Escanear con Cámara", fontWeight = FontWeight.Bold) },
+                    icon = { Icon(Icons.Default.CameraAlt, contentDescription = stringResource(id = R.string.dashboard_camera_desc)) },
+                    text = { Text(stringResource(id = R.string.dashboard_camera_button), fontWeight = FontWeight.Bold) },
                     containerColor = com.skaknna.ui.theme.WoodMedium,
                     contentColor = com.skaknna.ui.theme.GoldenYellow,
                     modifier = Modifier
@@ -170,8 +172,8 @@ fun DashboardScreen(
                 )
                 ExtendedFloatingActionButton(
                     onClick = onNavigateToEditor,
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Nuevo") },
-                    text = { Text("Nuevo Tablero Manual", fontWeight = FontWeight.Bold) },
+                    icon = { Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.dashboard_new_board_desc)) },
+                    text = { Text(stringResource(id = R.string.dashboard_new_board_button), fontWeight = FontWeight.Bold) },
                     containerColor = com.skaknna.ui.theme.WoodMedium,
                     contentColor = com.skaknna.ui.theme.GoldenYellow,
                     modifier = Modifier
@@ -180,6 +182,9 @@ fun DashboardScreen(
             }
         }
     ) { paddingValues ->
+        val dateFormatPattern = stringResource(id = R.string.date_format)
+        val dateFormat = SimpleDateFormat(dateFormatPattern, Locale.getDefault())
+        
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -200,20 +205,19 @@ fun DashboardScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "No tienes tableros guardados.",
+                            text = stringResource(id = R.string.dashboard_no_boards),
                             color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.5f),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Pulsa el botón de abajo para empezar.",
+                            text = stringResource(id = R.string.dashboard_empty_hint),
                             color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.4f),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
             } else {
-                val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                 items(boards, key = { it.id }) { board ->
                     var expanded by remember { mutableStateOf(false) }
 
@@ -246,7 +250,7 @@ fun DashboardScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Guardado: ${dateFormat.format(Date(board.updatedAt))}", 
+                                    text = stringResource(id = R.string.dashboard_saved_format, dateFormat.format(Date(board.updatedAt))), 
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.8f)
                                 )
@@ -256,7 +260,7 @@ fun DashboardScreen(
                                 IconButton(onClick = { expanded = true }) {
                                     Icon(
                                         imageVector = Icons.Default.MoreVert,
-                                        contentDescription = "Opciones",
+                                        contentDescription = stringResource(id = R.string.dashboard_options_desc),
                                         tint = com.skaknna.ui.theme.WarmWhite
                                     )
                                 }
@@ -267,7 +271,7 @@ fun DashboardScreen(
                                     modifier = Modifier.background(com.skaknna.ui.theme.WoodMedium)
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Cambiar nombre", color = com.skaknna.ui.theme.WarmWhite) },
+                                        text = { Text(stringResource(id = R.string.dashboard_rename_menu), color = com.skaknna.ui.theme.WarmWhite) },
                                         leadingIcon = { 
                                             Icon(
                                                 Icons.Default.Edit, 
@@ -281,7 +285,7 @@ fun DashboardScreen(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Eliminar tablero", color = MaterialTheme.colorScheme.error) },
+                                        text = { Text(stringResource(id = R.string.dashboard_delete_menu), color = MaterialTheme.colorScheme.error) },
                                         leadingIcon = { 
                                             Icon(
                                                 Icons.Default.Delete, 

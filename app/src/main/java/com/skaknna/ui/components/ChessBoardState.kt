@@ -95,9 +95,26 @@ fun canPlacePiece(
 
 // ─── Validation ────────────────────────────────────────────────────────────────
 
+/**
+ * Sealed class to represent board validation warnings.
+ * Each warning type corresponds to a translatable string resource.
+ */
+sealed class BoardWarning {
+    object WhiteNoKing : BoardWarning()
+    object WhiteMultipleKings : BoardWarning()
+    object BlackNoKing : BoardWarning()
+    object BlackMultipleKings : BoardWarning()
+    object WhitePawnRank8 : BoardWarning()
+    object WhitePawnRank1 : BoardWarning()
+    object BlackPawnRank8 : BoardWarning()
+    object BlackPawnRank1 : BoardWarning()
+    data class WhitePawnsCount(val count: Int) : BoardWarning()
+    data class BlackPawnsCount(val count: Int) : BoardWarning()
+}
+
 data class BoardValidation(
     val isValid: Boolean,
-    val warnings: List<String>
+    val warnings: List<BoardWarning>
 )
 
 /**
@@ -106,15 +123,15 @@ data class BoardValidation(
  */
 fun validateBoard(board: Array<Array<Char?>>): BoardValidation {
     val counts = countPieces(board)
-    val warnings = mutableListOf<String>()
+    val warnings = mutableListOf<BoardWarning>()
 
     // King counts
     val whiteKings = counts['K'] ?: 0
     val blackKings = counts['k'] ?: 0
-    if (whiteKings == 0) warnings.add("Las blancas no tienen rey")
-    if (whiteKings > 1) warnings.add("Las blancas tienen más de un rey")
-    if (blackKings == 0) warnings.add("Las negras no tienen rey")
-    if (blackKings > 1) warnings.add("Las negras tienen más de un rey")
+    if (whiteKings == 0) warnings.add(BoardWarning.WhiteNoKing)
+    if (whiteKings > 1) warnings.add(BoardWarning.WhiteMultipleKings)
+    if (blackKings == 0) warnings.add(BoardWarning.BlackNoKing)
+    if (blackKings > 1) warnings.add(BoardWarning.BlackMultipleKings)
 
     // Pawns on promotion ranks (rows 0 and 7)
     var whitePawnOnRank8 = false
@@ -127,16 +144,16 @@ fun validateBoard(board: Array<Array<Char?>>): BoardValidation {
         if (board[0][col] == 'p') blackPawnOnRank8 = true
         if (board[7][col] == 'P') whitePawnOnRank1 = true
     }
-    if (whitePawnOnRank8) warnings.add("Peón blanco en fila de coronación")
-    if (whitePawnOnRank1) warnings.add("Peón blanco en primera fila")
-    if (blackPawnOnRank8) warnings.add("Peón negro en fila de coronación")
-    if (blackPawnOnRank1) warnings.add("Peón negro en primera fila")
+    if (whitePawnOnRank8) warnings.add(BoardWarning.WhitePawnRank8)
+    if (whitePawnOnRank1) warnings.add(BoardWarning.WhitePawnRank1)
+    if (blackPawnOnRank8) warnings.add(BoardWarning.BlackPawnRank8)
+    if (blackPawnOnRank1) warnings.add(BoardWarning.BlackPawnRank1)
 
     // Too many pawns
     val whitePawns = counts['P'] ?: 0
     val blackPawns = counts['p'] ?: 0
-    if (whitePawns > 8) warnings.add("Demasiados peones blancos ($whitePawns)")
-    if (blackPawns > 8) warnings.add("Demasiados peones negros ($blackPawns)")
+    if (whitePawns > 8) warnings.add(BoardWarning.WhitePawnsCount(whitePawns))
+    if (blackPawns > 8) warnings.add(BoardWarning.BlackPawnsCount(blackPawns))
 
     return BoardValidation(isValid = warnings.isEmpty(), warnings = warnings.distinct())
 }

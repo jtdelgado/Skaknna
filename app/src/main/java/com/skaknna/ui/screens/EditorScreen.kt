@@ -32,10 +32,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.skaknna.R
 import com.skaknna.ui.components.*
 import com.skaknna.viewmodel.BoardViewModel
 import kotlin.math.roundToInt
@@ -80,7 +82,7 @@ fun EditorScreen(
             onDismissRequest = { showSaveDialog = false },
             title = {
                 Text(
-                    "Guardar Tablero",
+                    stringResource(id = R.string.editor_save_dialog_title),
                     color = com.skaknna.ui.theme.GoldenYellow,
                     fontWeight = FontWeight.Bold
                 )
@@ -93,7 +95,7 @@ fun EditorScreen(
                     OutlinedTextField(
                         value = boardName,
                         onValueChange = { boardName = it },
-                        label = { Text("Nombre de la partida") },
+                        label = { Text(stringResource(id = R.string.editor_game_name_label)) },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = com.skaknna.ui.theme.GoldenYellow,
@@ -107,7 +109,7 @@ fun EditorScreen(
                     )
 
                     Text(
-                        text = "¿Quién mueve ahora?",
+                        text = stringResource(id = R.string.editor_whose_turn_label),
                         style = MaterialTheme.typography.bodyMedium,
                         color = com.skaknna.ui.theme.WarmWhite
                     )
@@ -126,7 +128,7 @@ fun EditorScreen(
                                     unselectedColor = com.skaknna.ui.theme.WoodMedium
                                 )
                             )
-                            Text("Blancas", color = com.skaknna.ui.theme.WarmWhite)
+                            Text(stringResource(id = R.string.color_white), color = com.skaknna.ui.theme.WarmWhite)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { selectedTurn = "b" }) {
                             RadioButton(
@@ -137,7 +139,7 @@ fun EditorScreen(
                                     unselectedColor = com.skaknna.ui.theme.WoodMedium
                                 )
                             )
-                            Text("Negras", color = com.skaknna.ui.theme.WarmWhite)
+                            Text(stringResource(id = R.string.color_black), color = com.skaknna.ui.theme.WarmWhite)
                         }
                     }
                 }
@@ -163,7 +165,7 @@ fun EditorScreen(
                     enabled = boardName.isNotBlank()
                 ) {
                     Text(
-                        "Guardar",
+                        stringResource(id = R.string.editor_save_button),
                         color = if (boardName.isNotBlank()) com.skaknna.ui.theme.GoldenYellow
                                 else com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.5f),
                         fontWeight = FontWeight.Bold
@@ -172,7 +174,7 @@ fun EditorScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showSaveDialog = false }) {
-                    Text("Cancelar", color = com.skaknna.ui.theme.WarmWhite)
+                    Text(stringResource(id = R.string.button_cancel), color = com.skaknna.ui.theme.WarmWhite)
                 }
             }
         )
@@ -236,7 +238,7 @@ fun EditorScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            "Editor FEN",
+                            stringResource(id = R.string.editor_title),
                             color = com.skaknna.ui.theme.GoldenYellow,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.headlineMedium
@@ -246,7 +248,7 @@ fun EditorScreen(
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Atrás",
+                                contentDescription = stringResource(id = R.string.button_back),
                                 tint = com.skaknna.ui.theme.GoldenYellow
                             )
                         }
@@ -259,7 +261,7 @@ fun EditorScreen(
                         }) {
                             Icon(
                                 Icons.Default.Save,
-                                contentDescription = "Guardar Tablero",
+                                contentDescription = stringResource(id = R.string.editor_save_dialog_title),
                                 tint = com.skaknna.ui.theme.GoldenYellow,
                                 modifier = Modifier.size(26.dp)
                             )
@@ -307,14 +309,26 @@ fun EditorScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "⚠ Posición no válida",
+                                text = stringResource(id = R.string.validation_invalid_position),
                                 color = com.skaknna.ui.theme.GoldenYellow,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             )
                             validation.warnings.forEach { warning ->
+                                val warningText = when(warning) {
+                                    BoardWarning.WhiteNoKing -> stringResource(id = R.string.warning_white_no_king)
+                                    BoardWarning.WhiteMultipleKings -> stringResource(id = R.string.warning_white_multiple_kings)
+                                    BoardWarning.BlackNoKing -> stringResource(id = R.string.warning_black_no_king)
+                                    BoardWarning.BlackMultipleKings -> stringResource(id = R.string.warning_black_multiple_kings)
+                                    BoardWarning.WhitePawnRank8 -> stringResource(id = R.string.warning_white_pawn_rank8)
+                                    BoardWarning.WhitePawnRank1 -> stringResource(id = R.string.warning_white_pawn_rank1)
+                                    BoardWarning.BlackPawnRank8 -> stringResource(id = R.string.warning_black_pawn_rank8)
+                                    BoardWarning.BlackPawnRank1 -> stringResource(id = R.string.warning_black_pawn_rank1)
+                                    is BoardWarning.WhitePawnsCount -> stringResource(id = R.string.warning_white_pawns_count, warning.count)
+                                    is BoardWarning.BlackPawnsCount -> stringResource(id = R.string.warning_black_pawns_count, warning.count)
+                                }
                                 Text(
-                                    text = "• $warning",
+                                    text = "• $warningText",
                                     color = com.skaknna.ui.theme.WarmWhite,
                                     fontSize = 12.sp
                                 )
@@ -331,7 +345,7 @@ fun EditorScreen(
                         ExtendedFloatingActionButton(
                             onClick = { viewModel.clearBoard() },
                             icon = { Icon(Icons.Default.Clear, contentDescription = null) },
-                            text = { Text("Limpiar", fontWeight = FontWeight.Bold) },
+                            text = { Text(stringResource(id = R.string.editor_clear_button), fontWeight = FontWeight.Bold) },
                             containerColor = com.skaknna.ui.theme.WoodMedium,
                             contentColor = com.skaknna.ui.theme.GoldenYellow,
                             modifier = Modifier
@@ -343,7 +357,7 @@ fun EditorScreen(
                         ExtendedFloatingActionButton(
                             onClick = { viewModel.resetToStartPosition() },
                             icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
-                            text = { Text("Reiniciar", fontWeight = FontWeight.Bold) },
+                            text = { Text(stringResource(id = R.string.editor_reset_button), fontWeight = FontWeight.Bold) },
                             containerColor = com.skaknna.ui.theme.WoodMedium,
                             contentColor = com.skaknna.ui.theme.GoldenYellow,
                             modifier = Modifier
@@ -449,7 +463,7 @@ fun EditorScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Eliminar pieza",
+                            contentDescription = stringResource(id = R.string.editor_delete_piece_button),
                             tint = Color.White,
                             modifier = Modifier.size(28.dp)
                         )

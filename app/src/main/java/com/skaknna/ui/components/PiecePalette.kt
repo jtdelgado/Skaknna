@@ -17,9 +17,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.skaknna.R
 import com.skaknna.ui.theme.*
 
 /**
@@ -117,7 +119,7 @@ fun PiecePalette(
             ) {
                 Image(
                     painter = painterResource(id = pieceDrawable(piece)),
-                    contentDescription = if (isBlack) "Pieza negra $piece" else "Pieza blanca $piece",
+                    contentDescription = if (isBlack) stringResource(id = R.string.piece_black_description, piece.toString()) else stringResource(id = R.string.piece_white_description, piece.toString()),
                     modifier = Modifier.fillMaxSize(0.80f)
                 )
 
@@ -130,7 +132,7 @@ fun PiecePalette(
                             .padding(horizontal = 2.dp, vertical = 1.dp)
                     ) {
                         Text(
-                            text = "MAX",
+                            text = stringResource(id = R.string.editor_piece_limit_badge),
                             fontSize = 7.sp,
                             fontWeight = FontWeight.Bold,
                             color = GoldenYellow

@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.skaknna.R
 import com.skaknna.ui.components.ChessBoard
 import com.skaknna.ui.components.EvaluationBar
 import com.skaknna.viewmodel.BoardViewModel
@@ -49,7 +51,7 @@ fun AnalysisScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Análisis Táctico",
+                        stringResource(id = R.string.screen_title_analysis),
                         color = com.skaknna.ui.theme.GoldenYellow,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.headlineMedium
@@ -59,7 +61,7 @@ fun AnalysisScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Atrás",
+                            contentDescription = stringResource(id = R.string.button_back),
                             tint = com.skaknna.ui.theme.GoldenYellow
                         )
                     }
@@ -69,14 +71,14 @@ fun AnalysisScreen(
                     IconButton(onClick = { viewModel.analyzeCurrentPosition() }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Reiniciar Análisis",
+                            contentDescription = stringResource(id = R.string.button_refresh),
                             tint = com.skaknna.ui.theme.GoldenYellow
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Ajustes",
+                            contentDescription = stringResource(id = R.string.button_settings),
                             tint = com.skaknna.ui.theme.GoldenYellow
                         )
                     }
@@ -110,7 +112,7 @@ fun AnalysisScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    "Mejores Movimientos (Stockfish 18)",
+                    stringResource(id = R.string.analysis_best_moves_section),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -140,7 +142,7 @@ fun AnalysisScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    "Mejor Movimiento",
+                                    stringResource(id = R.string.analysis_best_move_label),
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -181,7 +183,7 @@ fun AnalysisScreen(
                             Divider(modifier = Modifier.padding(vertical = 8.dp))
                             
                             Text(
-                                "Variante Principal",
+                                stringResource(id = R.string.analysis_principal_variation),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.SemiBold
@@ -206,11 +208,11 @@ fun AnalysisScreen(
                                 color = com.skaknna.ui.theme.GoldenYellow
                             )
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text("Analizando posición...")
+                            Text(stringResource(id = R.string.analysis_analyzing))
                         }
                     } else {
                         Text(
-                            "Análisis no disponible",
+                            stringResource(id = R.string.analysis_not_available),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

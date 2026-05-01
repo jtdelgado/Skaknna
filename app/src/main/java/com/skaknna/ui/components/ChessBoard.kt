@@ -20,6 +20,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -225,7 +226,7 @@ fun ChessBoard(
                         if (piece != null) {
                             Image(
                                 painter = painterResource(id = pieceDrawable(piece)),
-                                contentDescription = "Pieza $piece",
+                                contentDescription = stringResource(id = R.string.piece_generic_description, piece.toString()),
                                 modifier = Modifier
                                     .fillMaxSize(0.85f)
                                     .graphicsLayer(alpha = pieceAlpha)

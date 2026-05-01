@@ -5,6 +5,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.skaknna.R
 
 @Composable
 fun FenInput(
@@ -17,7 +19,7 @@ fun FenInput(
         value = fen,
         onValueChange = onFenChange,
         isError = isError,
-        label = { Text("Posición FEN") },
+        label = { Text(stringResource(id = R.string.fen_input_label)) },
         modifier = modifier.fillMaxWidth(),
         singleLine = true
     )

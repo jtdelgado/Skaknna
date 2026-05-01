@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.skaknna.R
 import com.skaknna.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,10 +38,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Configuración", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.settings_title), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.button_back))
                     }
                 }
             )
@@ -55,7 +57,7 @@ fun SettingsScreen(
 
             // Analysis Depth Section
             Text(
-                text = "Análisis de Ajedrez",
+                text = stringResource(id = R.string.settings_chess_analysis_section),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -70,7 +72,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Profundidad de análisis:",
+                    text = stringResource(id = R.string.settings_analysis_depth_label),
                     fontSize = 14.sp
                 )
                 Spacer(modifier = Modifier.weight(1f))
@@ -105,9 +107,9 @@ fun SettingsScreen(
             ) {
                 Text(
                     text = when {
-                        analysisDepth.value <= 5 -> "🔋 Rápido"
-                        analysisDepth.value <= 12 -> "⚖️ Balanceado"
-                        else -> "🧠 Profundo"
+                        analysisDepth.value <= 5 -> stringResource(id = R.string.settings_depth_fast_icon)
+                        analysisDepth.value <= 12 -> stringResource(id = R.string.settings_depth_balanced_icon)
+                        else -> stringResource(id = R.string.settings_depth_deep_icon)
                     },
                     fontSize = 12.sp
                 )
@@ -131,19 +133,19 @@ fun SettingsScreen(
 private fun DepthExplanationCard(depth: Int) {
     val explanation = when {
         depth <= 12 -> {
-            "Análisis instantáneo. Ideal para detectar errores graves de inmediato."
+            stringResource(id = R.string.settings_depth_instant)
         }
         depth <= 18 -> {
-            "Análisis rápido. Nivel de Gran Maestro, perfecto para juego fluido."
+            stringResource(id = R.string.settings_depth_fast)
         }
         depth <= 24 -> {
-            "Análisis avanzado. Evalúa variantes estratégicas con gran precisión."
+            stringResource(id = R.string.settings_depth_advanced)
         }
         depth <= 30 -> {
-            "Análisis profundo. Detecta sutilezas que solo los mejores motores ven."
+            stringResource(id = R.string.settings_depth_deep)
         }
         else -> {
-            "Análisis de máxima precisión. Fuerza bruta total para posiciones críticas."
+            stringResource(id = R.string.settings_depth_max)
         }
     }
 
