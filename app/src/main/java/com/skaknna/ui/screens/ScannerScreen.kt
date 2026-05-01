@@ -41,10 +41,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.skaknna.BuildConfig
+import com.skaknna.R
 import com.skaknna.vision.ChessVisionManager
 import com.skaknna.vision.VisionState
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -91,10 +92,27 @@ fun ScannerScreen(
     }
 
     // Camera setup
-    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
+    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
     var capturedPhotoFile by remember { mutableStateOf<File?>(null) }
+
+    LaunchedEffect(Unit) {
+        ProcessCameraProvider.getInstance(context).apply {
+            addListener(
+                {
+                    try {
+                        cameraProvider = get() as? ProcessCameraProvider
+                    } catch (e: Exception) {
+                        Log.e("ScannerScreen", "Failed to obtain camera provider", e)
+                    }
+                },
+                ContextCompat.getMainExecutor(context)
+            )
+        }
+    }
+
+    // Note: ImageCapture is created and managed inside the AndroidView factory
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -105,7 +123,7 @@ fun ScannerScreen(
     }
 
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    
+
     // AI Vision Setup
     val visionManager = remember { ChessVisionManager(BuildConfig.GEMINI_API_KEY) }
     var visionState by remember { mutableStateOf<VisionState>(VisionState.Idle) }
@@ -124,23 +142,14 @@ fun ScannerScreen(
             cameraExecutor.shutdown()
         }
     }
-    
-    // Auto-reset captured image after 5 seconds IF not analyzing
-    LaunchedEffect(capturedImageUri, visionState) {
-        if (capturedImageUri != null && visionState == VisionState.Idle) {
-            delay(5000)
-            capturedImageUri = null
-            capturedPhotoFile = null
-        }
-    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Escanear Tablero", color = com.skaknna.ui.theme.GoldenYellow, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium) },
+                title = { Text(stringResource(id = R.string.screen_title_scanner), color = com.skaknna.ui.theme.GoldenYellow, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = com.skaknna.ui.theme.GoldenYellow)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.button_back), tint = com.skaknna.ui.theme.GoldenYellow)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor)
@@ -158,9 +167,8 @@ fun ScannerScreen(
                 if (visionState is VisionState.Analyzing) {
                     CircularProgressIndicator(color = com.skaknna.ui.theme.GoldenYellow)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Analizando pieza por pieza con IA...", color = com.skaknna.ui.theme.WarmWhite, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.scanner_analyzing_ai), color = com.skaknna.ui.theme.WarmWhite, fontWeight = FontWeight.Bold)
                 } else if (capturedImageUri != null) {
-                    // Muestra la imagen capturada
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -170,7 +178,7 @@ fun ScannerScreen(
                     ) {
                         AsyncImage(
                             model = capturedImageUri,
-                            contentDescription = "Foto capturada",
+                            contentDescription = stringResource(id = R.string.cd_captured_photo),
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -196,8 +204,8 @@ fun ScannerScreen(
                                 isFromGallery = false
                                 visionState = VisionState.Idle 
                             },
-                            icon = { Icon(Icons.Default.Refresh, contentDescription = "Reintentar") },
-                            text = { Text("Reintentar", fontWeight = FontWeight.Bold) },
+                            icon = { Icon(Icons.Default.Refresh, contentDescription = stringResource(id = R.string.button_retry)) },
+                            text = { Text(stringResource(id = R.string.button_retry), fontWeight = FontWeight.Bold) },
                             containerColor = com.skaknna.ui.theme.WoodDark,
                             contentColor = com.skaknna.ui.theme.GoldenYellow
                         )
@@ -215,8 +223,6 @@ fun ScannerScreen(
                                                 visionManager.analyzeBoard(originalBitmap)
                                             } else {
                                                 val originalBitmap = BitmapFactory.decodeFile(capturedPhotoFile!!.absolutePath)
-                                                // Recortar la imagen en un cuadrado basándose en el centro, 
-                                                // coincidiendo así exactamente con el encuadre 1:1 que vio el usuario
                                                 val width = originalBitmap.width
                                                 val height = originalBitmap.height
                                                 val size = minOf(width, height)
@@ -242,14 +248,13 @@ fun ScannerScreen(
                                     }
                                 }
                             },
-                            icon = { Icon(Icons.Default.Check, contentDescription = "Analizar") },
-                            text = { Text("Analizar Imagen", fontWeight = FontWeight.Bold) },
+                            icon = { Icon(Icons.Default.Check, contentDescription = stringResource(id = R.string.scanner_analyze_desc)) },
+                            text = { Text(stringResource(id = R.string.scanner_analyze_button), fontWeight = FontWeight.Bold) },
                             containerColor = com.skaknna.ui.theme.WoodMedium,
                             contentColor = com.skaknna.ui.theme.WarmWhite
                         )
                     }
                 } else {
-                    // Interfaz de Cámara
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -257,37 +262,53 @@ fun ScannerScreen(
                             .aspectRatio(1f)
                             .border(2.dp, com.skaknna.ui.theme.GoldenYellow)
                     ) {
-                        AndroidView(
-                            factory = { ctx ->
-                                val previewView = PreviewView(ctx)
-                                val cameraProvider = cameraProviderFuture.get()
+                        if (cameraProvider != null) {
+                            AndroidView(
+                                factory = { ctx ->
+                                    val previewView = PreviewView(ctx)
+                                    val provider = cameraProvider
+                                    if (provider != null) {
+                                        // Create ImageCapture instance for this session
+                                        val capture = ImageCapture.Builder()
+                                            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                                            .build()
+                                        
+                                        // Store in state so button can use it
+                                        imageCapture = capture
 
-                                val preview = Preview.Builder().build().also {
-                                    it.setSurfaceProvider(previewView.surfaceProvider)
-                                }
+                                        val preview = Preview.Builder().build().also {
+                                            it.setSurfaceProvider(previewView.surfaceProvider)
+                                        }
 
-                                imageCapture = ImageCapture.Builder()
-                                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                                    .build()
+                                        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-                                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-                                try {
-                                    cameraProvider.unbindAll()
-                                    cameraProvider.bindToLifecycle(
-                                        lifecycleOwner,
-                                        cameraSelector,
-                                        preview,
-                                        imageCapture
-                                    )
-                                } catch (exc: Exception) {
-                                    Log.e("CameraPreview", "Fallo al inicializar la cámara", exc)
-                                }
-
-                                previewView
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        )
+                                        try {
+                                            provider.unbindAll()
+                                            provider.bindToLifecycle(
+                                                lifecycleOwner,
+                                                cameraSelector,
+                                                preview,
+                                                capture
+                                            )
+                                        } catch (exc: Exception) {
+                                            Log.e("CameraPreview", "Failed to initialize camera", exc)
+                                        }
+                                    }
+                                    previewView
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            // Loading camera
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(com.skaknna.ui.theme.WoodDark),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = com.skaknna.ui.theme.GoldenYellow)
+                            }
+                        }
 
                         // Grid 8x8 Overlay
                         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -295,7 +316,6 @@ fun ScannerScreen(
                             val canvasWidth = size.width
                             val canvasHeight = size.height
 
-                            // Dibujar las celdas del ajedrez (cuadros alternos) muy sutiles
                             for (row in 0 until 8) {
                                 for (col in 0 until 8) {
                                     if ((row + col) % 2 == 1) {
@@ -307,17 +327,13 @@ fun ScannerScreen(
                                     }
                                 }
                             }
-
-                            // Dibujar las líneas del grid muy finas y blancas
                             for (i in 1..7) {
-                                // Líneas verticales
                                 drawLine(
                                     color = Color.White.copy(alpha = 0.15f),
                                     start = Offset(i * squareSize, 0f),
                                     end = Offset(i * squareSize, canvasHeight),
                                     strokeWidth = 1.dp.toPx()
                                 )
-                                // Líneas horizontales
                                 drawLine(
                                     color = Color.White.copy(alpha = 0.15f),
                                     start = Offset(0f, i * squareSize),
@@ -328,6 +344,7 @@ fun ScannerScreen(
                         }
                     }
 
+                    val isCameraReady = imageCapture != null
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -337,10 +354,11 @@ fun ScannerScreen(
                     ) {
                         ExtendedFloatingActionButton(
                             onClick = {
+                                val capture = imageCapture ?: return@ExtendedFloatingActionButton
                                 val photoFile = File(context.cacheDir, "chessboard_${System.currentTimeMillis()}.jpg")
                                 val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
-                                imageCapture?.takePicture(
+                                capture.takePicture(
                                     outputOptions,
                                     ContextCompat.getMainExecutor(context),
                                     object : ImageCapture.OnImageSavedCallback {
@@ -356,9 +374,9 @@ fun ScannerScreen(
                                     }
                                 )
                             },
-                            icon = { Icon(Icons.Default.Camera, contentDescription = "Capturar") },
-                            text = { Text("Capturar", fontWeight = FontWeight.Bold) },
-                            containerColor = com.skaknna.ui.theme.WoodMedium,
+                            icon = { Icon(Icons.Default.Camera, contentDescription = stringResource(id = R.string.button_capture)) },
+                            text = { Text(stringResource(id = R.string.button_capture), fontWeight = FontWeight.Bold) },
+                            containerColor = if (isCameraReady) com.skaknna.ui.theme.WoodMedium else com.skaknna.ui.theme.WoodDark,
                             contentColor = com.skaknna.ui.theme.GoldenYellow,
                             modifier = Modifier
                                 .weight(1f)
@@ -373,13 +391,13 @@ fun ScannerScreen(
                             shape = RoundedCornerShape(16.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(containerColor = com.skaknna.ui.theme.WoodDark, contentColor = com.skaknna.ui.theme.GoldenYellow)
                         ) {
-                            Icon(Icons.Default.PhotoLibrary, contentDescription = "Galería")
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(id = R.string.button_gallery))
                         }
                     }
                 }
             } else if (permissionRequested) {
                 // Should not reach here usually since ungranted returns back
-                Text("Se requiere permiso de cámara para escanear el tablero.")
+                Text(stringResource(id = R.string.scanner_camera_permission))
             } else {
                 CircularProgressIndicator(color = com.skaknna.ui.theme.GoldenYellow)
             }
@@ -435,7 +453,7 @@ private fun FenCompletionDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Completar Información del Tablero") },
+        title = { Text(stringResource(id = R.string.scanner_board_completion_dialog)) },
         text = {
             Column(
                 modifier = Modifier
@@ -445,7 +463,7 @@ private fun FenCompletionDialog(
             ) {
                 // Turn Selection
                 Text(
-                    "¿De quién es el turno?",
+                    stringResource(id = R.string.scanner_whose_turn),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
@@ -464,7 +482,7 @@ private fun FenCompletionDialog(
                             onClick = { onTurnChange("w") }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Blancas")
+                        Text(stringResource(id = R.string.color_white))
                     }
                     Row(
                         modifier = Modifier
@@ -477,7 +495,7 @@ private fun FenCompletionDialog(
                             onClick = { onTurnChange("b") }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Negras")
+                        Text(stringResource(id = R.string.color_black))
                     }
                 }
 
@@ -485,7 +503,7 @@ private fun FenCompletionDialog(
 
                 // Castling Rights
                 Text(
-                    "Derechos de Enroque",
+                    stringResource(id = R.string.scanner_castling_rights),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
@@ -505,7 +523,7 @@ private fun FenCompletionDialog(
                             checked = canCastleKingside,
                             onCheckedChange = onCastleKingsideChange
                         )
-                        Text("Blancas (flanco rey)")
+                        Text(stringResource(id = R.string.castling_white_kingside))
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -515,7 +533,7 @@ private fun FenCompletionDialog(
                             checked = canCastleQueenside,
                             onCheckedChange = onCastleQueensideChange
                         )
-                        Text("Blancas (flanco dama)")
+                        Text(stringResource(id = R.string.castling_white_queenside))
                     }
                 }
 
@@ -534,7 +552,7 @@ private fun FenCompletionDialog(
                             checked = canCastleKingsideBlack,
                             onCheckedChange = onCastleKingsideBlackChange
                         )
-                        Text("Negras (flanco rey)")
+                        Text(stringResource(id = R.string.castling_black_kingside))
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -544,7 +562,7 @@ private fun FenCompletionDialog(
                             checked = canCastleQueensideBlack,
                             onCheckedChange = onCastleQueensideBlackChange
                         )
-                        Text("Negras (flanco dama)")
+                        Text(stringResource(id = R.string.castling_black_queenside))
                     }
                 }
             }
@@ -570,7 +588,7 @@ private fun FenCompletionDialog(
                     onConfirm(completeFen)
                 }
             ) {
-                Text("Confirmar")
+                Text(stringResource(id = R.string.button_confirm))
             }
         },
         dismissButton = {
@@ -580,7 +598,7 @@ private fun FenCompletionDialog(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
-                Text("Cancelar")
+                Text(stringResource(id = R.string.button_cancel))
             }
         }
     )
