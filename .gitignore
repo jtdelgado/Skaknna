@@ -19,5 +19,8 @@ captures/
 .externalNativeBuild/
 .cxx/
 
+# Stockfish lib
+/app/src/main/jniLibs/
+
 # OS files
 .DS_Store
