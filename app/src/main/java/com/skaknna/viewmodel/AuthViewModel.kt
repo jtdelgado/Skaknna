@@ -26,7 +26,13 @@ import kotlinx.coroutines.tasks.await
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
-    data class Success(val userId: String, val displayName: String?, val email: String?) : AuthState()
+    data class Success(
+        val userId: String,
+        val displayName: String?,
+        val email: String?,
+        val profilePictureUrl: String? = null,
+        val profileInitial: String = "U"
+    ) : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -63,10 +69,13 @@ class AuthViewModel(
     init {
         // Si hay un usuario logeado, actualizar el estado
         if (_currentUser != null) {
+            val initial = _currentUser.displayName?.firstOrNull()?.uppercase() ?: "U"
             _authState.value = AuthState.Success(
                 userId = _currentUser.uid,
                 displayName = _currentUser.displayName,
-                email = _currentUser.email
+                email = _currentUser.email,
+                profilePictureUrl = _currentUser.photoUrl?.toString(),
+                profileInitial = initial
             )
         }
     }
@@ -136,9 +145,11 @@ class AuthViewModel(
         if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
             val idToken = googleIdTokenCredential.idToken
+            val profilePictureUri = googleIdTokenCredential.profilePictureUri?.toString()
+            val displayName = googleIdTokenCredential.displayName
 
             // Autenticar con Firebase
-            authenticateWithFirebase(idToken)
+            authenticateWithFirebase(idToken, profilePictureUri, displayName)
         } else {
             _authState.value = AuthState.Error("Tipo de credencial no soportado")
         }
@@ -148,18 +159,27 @@ class AuthViewModel(
      * Autentica el token de ID de Google con Firebase Authentication.
      * 
      * @param idToken Token de ID de Google obtenido de Credential Manager
+     * @param profilePictureUrl URL de la foto de perfil de Google
+     * @param displayName Nombre mostrado del usuario de Google
      */
-    private suspend fun authenticateWithFirebase(idToken: String) {
+    private suspend fun authenticateWithFirebase(
+        idToken: String,
+        profilePictureUrl: String? = null,
+        displayName: String? = null
+    ) {
         try {
             val authCredential = GoogleAuthProvider.getCredential(idToken, null)
             val authResult = firebaseAuth.signInWithCredential(authCredential).await()
 
             val user = authResult.user
             if (user != null) {
+                val initial = (displayName ?: user.displayName)?.firstOrNull()?.uppercase() ?: "U"
                 _authState.value = AuthState.Success(
                     userId = user.uid,
-                    displayName = user.displayName,
-                    email = user.email
+                    displayName = displayName ?: user.displayName,
+                    email = user.email,
+                    profilePictureUrl = profilePictureUrl ?: user.photoUrl?.toString(),
+                    profileInitial = initial
                 )
                 Log.d(TAG, "Autenticación exitosa. UID: ${user.uid}")
             } else {

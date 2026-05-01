@@ -148,5 +148,9 @@
     <string name="login_feature_3_title">Seguridad Google</string>
     <string name="login_feature_3_desc">Protección con los estándares de seguridad de Google</string>
     <string name="login_privacy_notice">Tu información está protegida por Google. Nunca compartimos datos con terceros.</string>
+    
+    <!-- ==================== AUTH BUTTONS ==================== -->
+    <string name="button_profile">Perfil</string>
+    <string name="button_logout">Cerrar Sesión</string>
 
 </resources>

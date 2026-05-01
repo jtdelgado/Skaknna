@@ -24,3 +24,4 @@ captures/
 
 # OS files
 .DS_Store
+app/google-services.json

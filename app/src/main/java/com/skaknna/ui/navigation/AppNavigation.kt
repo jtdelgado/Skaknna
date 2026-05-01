@@ -3,6 +3,7 @@ package com.skaknna.ui.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -13,34 +14,59 @@ import com.skaknna.ui.screens.DashboardScreen
 import com.skaknna.ui.screens.EditorScreen
 import com.skaknna.ui.screens.ScannerScreen
 import com.skaknna.ui.screens.SettingsScreen
+import com.skaknna.ui.screens.LoginScreen
 import com.skaknna.viewmodel.BoardViewModel
 import com.skaknna.viewmodel.BoardViewModelFactory
 import com.skaknna.viewmodel.SettingsViewModel
 import com.skaknna.viewmodel.SettingsViewModelFactory
+import com.skaknna.viewmodel.AuthViewModelFactory
+import com.skaknna.viewmodel.AuthViewModel
+import com.skaknna.viewmodel.AuthState
 
 @Composable
 fun AppNavigation(
     paddingValues: PaddingValues,
     boardViewModelFactory: BoardViewModelFactory,
-    settingsViewModelFactory: SettingsViewModelFactory
+    settingsViewModelFactory: SettingsViewModelFactory,
+    authViewModelFactory: AuthViewModelFactory
 ) {
     val navController = rememberNavController()
-    // Shared ViewModels for the session
     val boardViewModel: BoardViewModel = viewModel(factory = boardViewModelFactory)
     val settingsViewModel: SettingsViewModel = viewModel(factory = settingsViewModelFactory)
+    val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
+    
+    val authState = authViewModel.authState.collectAsState()
+    val startDestination = if (authState.value is AuthState.Success) "dashboard" else "login"
 
     NavHost(
         navController = navController, 
-        startDestination = "dashboard",
+        startDestination = startDestination,
         modifier = Modifier.padding(paddingValues)
     ) {
+        composable("login") {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate("dashboard") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onNavigateToSettings = { navController.navigate("settings") },
+                viewModel = authViewModel
+            )
+        }
         composable("dashboard") {
             DashboardScreen(
                 viewModel = boardViewModel,
+                authViewModel = authViewModel,
                 onNavigateToScanner = { navController.navigate("scanner") },
                 onNavigateToEditor = { navController.navigate("editor") },
                 onNavigateToAnalysis = { navController.navigate("analysis") },
-                onNavigateToSettings = { navController.navigate("settings") }
+                onNavigateToSettings = { navController.navigate("settings") },
+                onNavigateToLogin = { 
+                    navController.navigate("login") { 
+                        popUpTo(0) { inclusive = true } 
+                    } 
+                }
             )
         }
         composable("scanner") {

@@ -19,6 +19,7 @@ import com.skaknna.data.repository.BoardRepository
 import com.skaknna.viewmodel.BoardViewModelFactory
 import com.skaknna.viewmodel.SettingsViewModelFactory
 import com.skaknna.viewmodel.SettingsViewModel
+import com.skaknna.viewmodel.AuthViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,6 +34,12 @@ class MainActivity : ComponentActivity() {
         val settingsViewModelFactory = SettingsViewModelFactory(this)
         val settingsViewModel = settingsViewModelFactory.create(SettingsViewModel::class.java) as SettingsViewModel
         val viewModelFactory = BoardViewModelFactory(repository, settingsViewModel, this)
+        
+        // Initialize AuthViewModelFactory with WEB_CLIENT_ID
+        val authViewModelFactory = AuthViewModelFactory(
+            context = this,
+            webClientId = BuildConfig.WEB_CLIENT_ID
+        )
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
@@ -47,7 +54,8 @@ class MainActivity : ComponentActivity() {
                     AppNavigation(
                         paddingValues = it,
                         boardViewModelFactory = viewModelFactory,
-                        settingsViewModelFactory = settingsViewModelFactory
+                        settingsViewModelFactory = settingsViewModelFactory,
+                        authViewModelFactory = authViewModelFactory
                     )
                 }
             }

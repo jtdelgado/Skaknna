@@ -22,32 +22,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.skaknna.viewmodel.BoardViewModel
+import com.skaknna.viewmodel.AuthViewModel
+import com.skaknna.viewmodel.AuthState
 import com.skaknna.data.model.Board
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.layout.ContentScale
 import com.skaknna.R
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: BoardViewModel,
+    authViewModel: AuthViewModel,
     onNavigateToScanner: () -> Unit,
     onNavigateToEditor: () -> Unit,
     onNavigateToAnalysis: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
-    // Estado Mock para simular sesión
-    var isLoggedIn by remember { mutableStateOf(false) }
-    
+    val authState = authViewModel.authState.collectAsState()
     val boards by viewModel.allBoards.collectAsState()
 
     var boardToRename by remember { mutableStateOf<Board?>(null) }
     var boardToDelete by remember { mutableStateOf<Board?>(null) }
+    var showAuthMenu by remember { mutableStateOf(false) }
 
     if (boardToRename != null) {
         var newName by remember { mutableStateOf(boardToRename!!.name) }
@@ -118,9 +123,93 @@ fun DashboardScreen(
                 title = { Text(stringResource(id = R.string.screen_title_dashboard), color = com.skaknna.ui.theme.GoldenYellow, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor),
                 actions = {
+                    // Auth Menu
+                    Box {
+                        IconButton(
+                            onClick = { showAuthMenu = !showAuthMenu },
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            when (val state = authState.value) {
+                                is AuthState.Success -> {
+                                    if (state.profilePictureUrl != null) {
+                                        // Mostrar foto de perfil de Google
+                                        AsyncImage(
+                                            model = state.profilePictureUrl,
+                                            contentDescription = stringResource(id = R.string.button_profile),
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(CircleShape)
+                                                .border(2.dp, com.skaknna.ui.theme.WoodDark, CircleShape),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        // Fallback: mostrar la inicial
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(CircleShape)
+                                                .background(com.skaknna.ui.theme.LeafGreen)
+                                                .border(2.dp, com.skaknna.ui.theme.WoodDark, CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                state.profileInitial,
+                                                color = com.skaknna.ui.theme.WarmWhite,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 16.sp
+                                            )
+                                        }
+                                    }
+                                }
+                                else -> {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountCircle,
+                                        contentDescription = stringResource(id = R.string.button_profile),
+                                        tint = com.skaknna.ui.theme.WarmWhite,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                            }
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showAuthMenu,
+                            onDismissRequest = { showAuthMenu = false },
+                            modifier = Modifier.background(com.skaknna.ui.theme.WoodDark)
+                        ) {
+                            when (authState.value) {
+                                is AuthState.Success -> {
+                                    val userState = authState.value as AuthState.Success
+                                    DropdownMenuItem(
+                                        text = { Text(userState.email ?: "Usuario", color = com.skaknna.ui.theme.WarmWhite) },
+                                        onClick = { showAuthMenu = false }
+                                    )
+                                    Divider(color = com.skaknna.ui.theme.GoldenYellow.copy(alpha = 0.3f))
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.button_logout), color = com.skaknna.ui.theme.GoldenYellow) },
+                                        onClick = {
+                                            showAuthMenu = false
+                                            authViewModel.signOut()
+                                            onNavigateToLogin()
+                                        }
+                                    )
+                                }
+                                else -> {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.login_title), color = com.skaknna.ui.theme.GoldenYellow) },
+                                        onClick = {
+                                            showAuthMenu = false
+                                            onNavigateToLogin()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
                     IconButton(
                         onClick = onNavigateToSettings,
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -128,32 +217,6 @@ fun DashboardScreen(
                             tint = com.skaknna.ui.theme.WarmWhite,
                             modifier = Modifier.size(28.dp)
                         )
-                    }
-                    IconButton(
-                        onClick = { isLoggedIn = !isLoggedIn },
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        if (isLoggedIn) {
-                            // Placeholder de foto de Google
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(com.skaknna.ui.theme.LeafGreen)
-                                    .border(2.dp, com.skaknna.ui.theme.WoodDark, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("G", color = com.skaknna.ui.theme.WarmWhite, fontWeight = FontWeight.Bold)
-                            }
-                        } else {
-                            // Usuario desconocido
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = stringResource(id = R.string.dashboard_login_button),
-                                tint = com.skaknna.ui.theme.WarmWhite,
-                                modifier = Modifier.size(36.dp)
-                            )
-                        }
                     }
                 }
             )
