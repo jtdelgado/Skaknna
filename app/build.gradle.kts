@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.secrets)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -83,4 +84,14 @@ dependencies {
     
     // DataStore Preferences
     implementation(libs.androidx.datastore.preferences)
+    
+    // Credential Manager & Google Auth (Modern Sign-In)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.google.identity.googleid)
+    
+    // Firebase (using BOM for version management)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore.ktx)
 }

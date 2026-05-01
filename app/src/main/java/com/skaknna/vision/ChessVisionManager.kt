@@ -22,13 +22,13 @@ class ChessVisionManager(private val apiKey: String) {
         - Si el tablero está vacío o no es claro, devuelve 8/8/8/8/8/8/8/8.
     """.trimIndent()
 
-    // Jerarquía optimizada para velocidad y precisión (Abril 2026).
-    // Priorizamos los modelos Flash de nueva generación que son rápidos pero muy capaces.
+    // FIX #3: Lista de modelos con IDs reales y verificados en la API de Gemini (Abril 2026).
+    // "gemini-flash-latest" y "gemini-3.1-pro-preview" no existen → causaban 404.
     private val modelNames = listOf(
-        "gemini-2.5-flash",        // El balance ideal: rápido y con capacidad "Thinking"
-        "gemini-flash-latest",     // Alias rápido
-        "gemini-2.5-pro",          // Pro estable (si Flash falla o no es preciso)
-        "gemini-3.1-pro-preview"   // Último recurso de máxima inteligencia (lento)
+        "gemini-2.5-flash-preview-04-17", // Flash 2.5 estable: rápido y con razonamiento
+        "gemini-2.0-flash",               // Flash 2.0: fallback rápido y muy disponible
+        "gemini-2.5-pro-preview-05-06",   // Pro 2.5: máxima precisión si Flash falla
+        "gemini-1.5-pro"                  // Último recurso: modelo estable y probado
     )
 
     suspend fun analyzeBoard(boardBitmap: Bitmap): VisionState = withContext(Dispatchers.IO) {
