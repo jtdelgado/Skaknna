@@ -25,6 +25,12 @@ interface BoardDao {
     suspend fun getBoardById(id: String): SavedBoardEntity?
 
     /**
+     * Get all boards for a specific user.
+     */
+    @Query("SELECT * FROM saved_boards WHERE userId = :userId")
+    suspend fun getBoardsByUserId(userId: String): List<SavedBoardEntity>
+
+    /**
      * Get all boards that haven't been synced to Firebase yet.
      */
     @Query("SELECT * FROM saved_boards WHERE isSynced = 0")

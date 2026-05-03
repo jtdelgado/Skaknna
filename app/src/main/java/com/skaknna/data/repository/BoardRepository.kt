@@ -58,6 +58,7 @@ class BoardRepository(
 
     suspend fun syncWithCloud(userId: String): Pair<Int, Int> {
         val remoteBoards = remoteService.getUserBoards(userId).getOrElse { throw it }
+        val remoteIds = remoteBoards.map { it.id }.toSet()
 
         var downloaded = 0
         for (dto in remoteBoards) {
@@ -83,7 +84,16 @@ class BoardRepository(
             }
         }
 
-        Log.d(TAG, "Sync complete: downloaded=$downloaded, uploaded=$uploaded")
+        var deletedLocally = 0
+        val localUserBoards = localDao.getBoardsByUserId(userId)
+        for (local in localUserBoards) {
+            if (local.isSynced && !remoteIds.contains(local.id)) {
+                localDao.deleteBoardById(local.id)
+                deletedLocally++
+            }
+        }
+
+        Log.d(TAG, "Sync complete: downloaded=$downloaded, uploaded=$uploaded, deletedLocally=$deletedLocally")
         return Pair(uploaded, downloaded)
     }
 }
