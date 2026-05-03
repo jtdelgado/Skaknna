@@ -26,6 +26,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
@@ -37,8 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Brush
 import com.skaknna.R
 import com.skaknna.ui.components.*
+import com.skaknna.ui.theme.*
 import com.skaknna.viewmodel.BoardViewModel
 import kotlin.math.roundToInt
 
@@ -53,6 +56,7 @@ fun EditorScreen(
     val board by viewModel.board.collectAsState()
     val validation by viewModel.validation.collectAsState()
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     var showSaveDialog by remember { mutableStateOf(false) }
     var boardName by remember { mutableStateOf("") }
     var selectedTurn by remember { mutableStateOf("w") }
@@ -83,8 +87,9 @@ fun EditorScreen(
             title = {
                 Text(
                     stringResource(id = R.string.editor_save_dialog_title),
-                    color = com.skaknna.ui.theme.GoldenYellow,
-                    fontWeight = FontWeight.Bold
+                    color = PrimaryGold,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleLarge
                 )
             },
             text = {
@@ -98,20 +103,20 @@ fun EditorScreen(
                         label = { Text(stringResource(id = R.string.editor_game_name_label)) },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = com.skaknna.ui.theme.GoldenYellow,
-                            unfocusedBorderColor = com.skaknna.ui.theme.WoodMedium,
-                            focusedTextColor = com.skaknna.ui.theme.WarmWhite,
-                            unfocusedTextColor = com.skaknna.ui.theme.WarmWhite,
-                            cursorColor = com.skaknna.ui.theme.GoldenYellow,
-                            focusedLabelColor = com.skaknna.ui.theme.GoldenYellow,
-                            unfocusedLabelColor = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.7f)
+                            focusedBorderColor = PrimaryGold,
+                            unfocusedBorderColor = OutlineColor,
+                            focusedTextColor = WarmWhite,
+                            unfocusedTextColor = WarmWhite,
+                            cursorColor = PrimaryGold,
+                            focusedLabelColor = PrimaryGold,
+                            unfocusedLabelColor = WarmWhite.copy(alpha = 0.7f)
                         )
                     )
 
                     Text(
                         text = stringResource(id = R.string.editor_whose_turn_label),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = com.skaknna.ui.theme.WarmWhite
+                        color = WarmWhite
                     )
 
                     Row(
@@ -124,27 +129,27 @@ fun EditorScreen(
                                 selected = selectedTurn == "w",
                                 onClick = { selectedTurn = "w" },
                                 colors = RadioButtonDefaults.colors(
-                                    selectedColor = com.skaknna.ui.theme.GoldenYellow,
-                                    unselectedColor = com.skaknna.ui.theme.WoodMedium
+                                    selectedColor = PrimaryGold,
+                                    unselectedColor = OutlineColor
                                 )
                             )
-                            Text(stringResource(id = R.string.color_white), color = com.skaknna.ui.theme.WarmWhite)
+                            Text(stringResource(id = R.string.color_white), color = WarmWhite)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { selectedTurn = "b" }) {
                             RadioButton(
                                 selected = selectedTurn == "b",
                                 onClick = { selectedTurn = "b" },
                                 colors = RadioButtonDefaults.colors(
-                                    selectedColor = com.skaknna.ui.theme.GoldenYellow,
-                                    unselectedColor = com.skaknna.ui.theme.WoodMedium
+                                    selectedColor = PrimaryGold,
+                                    unselectedColor = OutlineColor
                                 )
                             )
-                            Text(stringResource(id = R.string.color_black), color = com.skaknna.ui.theme.WarmWhite)
+                            Text(stringResource(id = R.string.color_black), color = WarmWhite)
                         }
                     }
                 }
             },
-            containerColor = com.skaknna.ui.theme.WoodDark,
+            containerColor = SurfaceGreen,
             confirmButton = {
                 TextButton(
                     onClick = { 
@@ -166,15 +171,14 @@ fun EditorScreen(
                 ) {
                     Text(
                         stringResource(id = R.string.editor_save_button),
-                        color = if (boardName.isNotBlank()) com.skaknna.ui.theme.GoldenYellow
-                                else com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.5f),
-                        fontWeight = FontWeight.Bold
+                        color = if (boardName.isNotBlank()) PrimaryGold else WarmWhite.copy(alpha = 0.5f),
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showSaveDialog = false }) {
-                    Text(stringResource(id = R.string.button_cancel), color = com.skaknna.ui.theme.WarmWhite)
+                    Text(stringResource(id = R.string.button_cancel), color = WarmWhite)
                 }
             }
         )
@@ -233,23 +237,23 @@ fun EditorScreen(
 
     // ─── UI ───────────────────────────────────────────────────────────────────–
     CompositionLocalProvider(LocalDragAndDropState provides dndState) {
+        val radialGradient = Brush.radialGradient(
+            colors = listOf(BackgroundGradientCenter, BackgroundGradientEdge),
+            radius = Float.MAX_VALUE
+        )
+
         Scaffold(
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            containerColor = Color.Transparent,
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            stringResource(id = R.string.editor_title),
-                            color = com.skaknna.ui.theme.GoldenYellow,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                    },
+                SkaknnaTopAppBar(
+                    title = stringResource(id = R.string.editor_title),
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(id = R.string.button_back),
-                                tint = com.skaknna.ui.theme.GoldenYellow
+                                tint = PrimaryGold
                             )
                         }
                     },
@@ -262,17 +266,18 @@ fun EditorScreen(
                             Icon(
                                 Icons.Default.Save,
                                 contentDescription = stringResource(id = R.string.editor_save_dialog_title),
-                                tint = com.skaknna.ui.theme.GoldenYellow,
+                                tint = PrimaryGold,
                                 modifier = Modifier.size(26.dp)
                             )
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor)
+                    }
                 )
             }
         ) { paddingValues ->
             // Root Box: hosts content + floating overlays (drag piece, delete zone)
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .background(radialGradient)) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -286,8 +291,8 @@ fun EditorScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(com.skaknna.ui.theme.WoodDark)
-                            .border(2.dp, com.skaknna.ui.theme.WoodMedium, RoundedCornerShape(16.dp))
+                            .background(SurfaceGreen)
+                            .border(1.dp, OutlineColor, RoundedCornerShape(16.dp))
                             .padding(16.dp)
                     ) {
                         FenInput(
@@ -302,16 +307,16 @@ fun EditorScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(com.skaknna.ui.theme.GoldGlow)
-                                .border(2.dp, com.skaknna.ui.theme.GoldenYellow, RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(ErrorColor.copy(alpha = 0.1f))
+                                .border(2.dp, ErrorColor, RoundedCornerShape(16.dp))
                                 .padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.validation_invalid_position),
-                                color = com.skaknna.ui.theme.GoldenYellow,
-                                fontWeight = FontWeight.Bold,
+                                color = ErrorColor,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp
                             )
                             validation.warnings.forEach { warning ->
@@ -329,7 +334,7 @@ fun EditorScreen(
                                 }
                                 Text(
                                     text = "• $warningText",
-                                    color = com.skaknna.ui.theme.WarmWhite,
+                                    color = WarmWhite,
                                     fontSize = 12.sp
                                 )
                             }
@@ -345,24 +350,24 @@ fun EditorScreen(
                         ExtendedFloatingActionButton(
                             onClick = { viewModel.clearBoard() },
                             icon = { Icon(Icons.Default.Clear, contentDescription = null) },
-                            text = { Text(stringResource(id = R.string.editor_clear_button), fontWeight = FontWeight.Bold) },
-                            containerColor = com.skaknna.ui.theme.WoodMedium,
-                            contentColor = com.skaknna.ui.theme.GoldenYellow,
+                            text = { Text(stringResource(id = R.string.editor_clear_button), fontWeight = FontWeight.SemiBold) },
+                            containerColor = SurfaceGreen,
+                            contentColor = PrimaryGold,
                             modifier = Modifier
                                 .weight(1f)
-                                .border(3.dp, com.skaknna.ui.theme.WoodDark, RoundedCornerShape(16.dp))
+                                .border(1.dp, PrimaryGold, RoundedCornerShape(16.dp))
                         )
 
                         // Posición inicial
                         ExtendedFloatingActionButton(
                             onClick = { viewModel.resetToStartPosition() },
                             icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
-                            text = { Text(stringResource(id = R.string.editor_reset_button), fontWeight = FontWeight.Bold) },
-                            containerColor = com.skaknna.ui.theme.WoodMedium,
-                            contentColor = com.skaknna.ui.theme.GoldenYellow,
+                            text = { Text(stringResource(id = R.string.editor_reset_button), fontWeight = FontWeight.SemiBold) },
+                            containerColor = SurfaceGreen,
+                            contentColor = PrimaryGold,
                             modifier = Modifier
                                 .weight(1f)
-                                .border(3.dp, com.skaknna.ui.theme.WoodDark, RoundedCornerShape(16.dp))
+                                .border(1.dp, PrimaryGold, RoundedCornerShape(16.dp))
                         )
                     }
 
@@ -372,8 +377,8 @@ fun EditorScreen(
                             .fillMaxWidth()
                             .weight(1f)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(com.skaknna.ui.theme.WoodDark)
-                            .border(2.dp, com.skaknna.ui.theme.WoodMedium, RoundedCornerShape(16.dp))
+                            .background(SurfaceGreen)
+                            .border(1.dp, OutlineColor, RoundedCornerShape(16.dp))
                             .padding(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {

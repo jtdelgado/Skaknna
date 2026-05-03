@@ -1,29 +1,43 @@
 package com.skaknna.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.skaknna.R
+import com.skaknna.ui.components.AnalysisCard
+import com.skaknna.ui.components.SkaknnaTopAppBar
+import com.skaknna.ui.theme.*
 import com.skaknna.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,31 +49,49 @@ fun SettingsScreen(
     val analysisDepth = viewModel.analysisDepth.collectAsState()
     val estimatedTime = viewModel.getEstimatedAnalysisTime(analysisDepth.value)
 
+    val radialGradient = Brush.radialGradient(
+        colors = listOf(BackgroundGradientCenter, BackgroundGradientEdge),
+        radius = Float.MAX_VALUE
+    )
+    
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(id = R.string.settings_title), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+            SkaknnaTopAppBar(
+                title = stringResource(id = R.string.settings_title),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.button_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.button_back), tint = PrimaryGold)
                     }
-                }
+                },
+                scrollBehavior = scrollBehavior
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(paddingValues)
-                .padding(16.dp)
+                .fillMaxSize()
+                .background(radialGradient),
+            contentPadding = PaddingValues(
+                top = paddingValues.calculateTopPadding() + 16.dp,
+                bottom = paddingValues.calculateBottomPadding() + 16.dp,
+                start = 16.dp,
+                end = 16.dp
+            )
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            item {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(modifier = Modifier.height(16.dp))
 
             // Analysis Depth Section
             Text(
                 text = stringResource(id = R.string.settings_chess_analysis_section),
                 fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = WarmWhite
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -73,13 +105,15 @@ fun SettingsScreen(
             ) {
                 Text(
                     text = stringResource(id = R.string.settings_analysis_depth_label),
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    color = WarmWhite
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = analysisDepth.value.toString(),
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryGold
                 )
             }
 
@@ -92,10 +126,15 @@ fun SettingsScreen(
                     viewModel.setAnalysisDepth(newValue.toInt())
                 },
                 valueRange = 1f..20f,
-                steps = 18, // Steps for 1-20 with step size of 1
+                steps = 18,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 8.dp),
+                colors = SliderDefaults.colors(
+                    thumbColor = PrimaryGold,
+                    activeTrackColor = LeafGreen,
+                    inactiveTrackColor = OutlineColor
+                )
             )
 
             // Depth Description
@@ -111,13 +150,14 @@ fun SettingsScreen(
                         analysisDepth.value <= 12 -> stringResource(id = R.string.settings_depth_balanced_icon)
                         else -> stringResource(id = R.string.settings_depth_deep_icon)
                     },
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    color = WarmWhite
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = estimatedTime,
                     fontSize = 12.sp,
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                    color = DeepEspresso
                 )
             }
 
@@ -125,6 +165,8 @@ fun SettingsScreen(
 
             // Information Card
             DepthExplanationCard(analysisDepth.value)
+                }
+            }
         }
     }
 }
@@ -149,7 +191,7 @@ private fun DepthExplanationCard(depth: Int) {
         }
     }
 
-    androidx.compose.material3.Card(
+    AnalysisCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
@@ -160,7 +202,7 @@ private fun DepthExplanationCard(depth: Int) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+            color = WarmWhite
         )
     }
 }

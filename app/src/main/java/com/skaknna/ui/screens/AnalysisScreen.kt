@@ -1,18 +1,26 @@
 package com.skaknna.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.skaknna.R
+import com.skaknna.ui.components.AnalysisCard
 import com.skaknna.ui.components.ChessBoard
 import com.skaknna.ui.components.EvaluationBar
+import com.skaknna.ui.components.SkaknnaTopAppBar
+import com.skaknna.ui.theme.*
 import com.skaknna.viewmodel.BoardViewModel
 
 import androidx.compose.material.icons.Icons
@@ -32,6 +40,7 @@ fun AnalysisScreen(
     val evaluation by viewModel.evaluation.collectAsState()
     val analysisLine by viewModel.analysisLine.collectAsState()
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     // Manage screen lifecycle to suppress FEN listener analysis during board selection
     DisposableEffect(Unit) {
@@ -47,60 +56,70 @@ fun AnalysisScreen(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(id = R.string.screen_title_analysis),
-                        color = com.skaknna.ui.theme.GoldenYellow,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                },
+            SkaknnaTopAppBar(
+                title = stringResource(id = R.string.screen_title_analysis),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.button_back),
-                            tint = com.skaknna.ui.theme.GoldenYellow
+                            tint = PrimaryGold
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor),
                 actions = {
                     IconButton(onClick = { viewModel.analyzeCurrentPosition() }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = stringResource(id = R.string.button_refresh),
-                            tint = com.skaknna.ui.theme.GoldenYellow
+                            tint = PrimaryGold
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = stringResource(id = R.string.button_settings),
-                            tint = com.skaknna.ui.theme.GoldenYellow
+                            tint = PrimaryGold
                         )
                     }
                 }
             )
         }
     ) { paddingValues ->
-        Column(
+        val radialGradient = Brush.radialGradient(
+            colors = listOf(BackgroundGradientCenter, BackgroundGradientEdge),
+            radius = Float.MAX_VALUE
+        )
+
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+                .background(radialGradient),
+            contentPadding = PaddingValues(
+                top = paddingValues.calculateTopPadding() + 16.dp,
+                bottom = paddingValues.calculateBottomPadding() + 16.dp,
+                start = 16.dp,
+                end = 16.dp
+            )
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                EvaluationBar(evaluation = evaluation, modifier = Modifier.height(300.dp))
-                // ChessBoard now takes board matrix; read-only (no onDrop callback)
-                ChessBoard(board = board, modifier = Modifier.weight(1f))
+            item {
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                // ChessBoard width = total width - EvaluationBar width (6.dp) - spacing (8.dp)
+                val boardSize = maxWidth - 14.dp
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(boardSize),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    EvaluationBar(evaluation = evaluation, modifier = Modifier.fillMaxHeight())
+                    // ChessBoard takes the exact calculated size to maintain 1:1 aspect ratio
+                    ChessBoard(board = board, modifier = Modifier.size(boardSize))
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -113,111 +132,126 @@ fun AnalysisScreen(
             ) {
                 Text(
                     stringResource(id = R.string.analysis_best_moves_section),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = WarmWhite
                 )
                 
                 if (isAnalyzing) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color = com.skaknna.ui.theme.GoldenYellow
+                        color = PrimaryGold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Analysis Results Card
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            AnalysisCard(modifier = Modifier.fillMaxWidth().wrapContentHeight(), padding = 24) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     if (bestMove.isNotEmpty()) {
                         // Best Move Section
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    stringResource(id = R.string.analysis_best_move_label),
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    bestMove,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = com.skaknna.ui.theme.GoldenYellow
-                                )
-                            }
-                            
-                            // Evaluation Badge
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = when {
-                                            evaluation > 0.5f -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                            evaluation < -0.5f -> MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
-                                            else -> MaterialTheme.colorScheme.surfaceVariant
-                                        },
-                                        shape = MaterialTheme.shapes.small
-                                    )
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    formatEvaluation(evaluation),
-                                    fontWeight = FontWeight.Bold,
-                                    color = when {
-                                        evaluation > 0.5f -> MaterialTheme.colorScheme.primary
-                                        evaluation < -0.5f -> MaterialTheme.colorScheme.error
-                                        else -> MaterialTheme.colorScheme.onSurface
-                                    }
-                                )
-                            }
-                        }
-
-                        if (analysisLine.isNotEmpty()) {
-                            Divider(modifier = Modifier.padding(vertical = 8.dp))
-                            
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                stringResource(id = R.string.analysis_principal_variation),
+                                stringResource(id = R.string.analysis_best_move_label),
                                 fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.SemiBold
+                                color = DeepEspresso,
+                                style = MaterialTheme.typography.labelSmall
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                analysisLine,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface
+                                bestMove,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryGold
                             )
                         }
-                    } else if (isAnalyzing) {
-                        Row(
+                        
+                        // Evaluation Badge
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                                .background(
+                                    color = when {
+                                        evaluation > 0.5f -> LeafGreen.copy(alpha = 0.2f)
+                                        evaluation < -0.5f -> MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                                        else -> OutlineColor
+                                    },
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = when {
+                                        evaluation > 0.5f -> LeafGreen
+                                        evaluation < -0.5f -> MaterialTheme.colorScheme.error
+                                        else -> OutlineColor
+                                    },
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = com.skaknna.ui.theme.GoldenYellow
+                            Text(
+                                formatEvaluation(evaluation),
+                                fontWeight = FontWeight.Bold,
+                                color = when {
+                                    evaluation > 0.5f -> LeafGreen
+                                    evaluation < -0.5f -> MaterialTheme.colorScheme.error
+                                    else -> WarmWhite
+                                }
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(stringResource(id = R.string.analysis_analyzing))
                         }
+                    }
+
+                    if (analysisLine.isNotEmpty()) {
+                        Divider(modifier = Modifier.padding(vertical = 8.dp), color = OutlineColor)
+                        
+                        Text(
+                            stringResource(id = R.string.analysis_principal_variation),
+                            fontSize = 12.sp,
+                            color = DeepEspresso,
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            analysisLine,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = WarmWhite
+                        )
+                    }
+                } else if (isAnalyzing) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = PrimaryGold
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(stringResource(id = R.string.analysis_analyzing), color = WarmWhite)
+                    }
                     } else {
                         Text(
                             stringResource(id = R.string.analysis_not_available),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = DeepEspresso
                         )
                     }
                 }
+            }
             }
         }
     }

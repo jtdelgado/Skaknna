@@ -52,8 +52,10 @@ fun PiecePalette(
     val dndState = LocalDragAndDropState.current
 
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         pieces.forEach { (piece, _) ->
@@ -69,15 +71,15 @@ fun PiecePalette(
                 modifier = Modifier
                     .weight(1f)
                     .aspectRatio(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(WoodMedium)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(SurfaceGreen)
                     .border(
-                        width = 1.5.dp,
+                        width = if (atLimit) 1.dp else 2.dp,
                         color = when {
-                            atLimit -> WoodDark
-                            else -> WoodLight.copy(alpha = 0.5f)
+                            atLimit -> OutlineColor
+                            else -> PrimaryGold
                         },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(16.dp)
                     )
                     .graphicsLayer(alpha = alpha)
                     .onGloballyPositioned { coords ->
@@ -96,8 +98,6 @@ fun PiecePalette(
                                 )
                             },
                             onDrag = { change, dragAmount ->
-                                // FIX: accumulate using delta so position stays correct
-                                // when finger moves far beyond the tile boundaries.
                                 change.consume()
                                 val current = dndState.activeDrag ?: return@detectDragGestures
                                 dndState.updatePosition(
@@ -106,8 +106,6 @@ fun PiecePalette(
                                 )
                             },
                             onDragEnd = {
-                                // The palette gesture owns the event end.
-                                // Placement logic + endDrag() happen in EditorScreen.handlePaletteDragEnd().
                                 onPieceDragEnd()
                             },
                             onDragCancel = {
@@ -128,14 +126,14 @@ fun PiecePalette(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(2.dp)
-                            .background(WoodDark.copy(alpha = 0.85f), RoundedCornerShape(4.dp))
+                            .background(DeepEspresso.copy(alpha = 0.85f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 2.dp, vertical = 1.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.editor_piece_limit_badge),
                             fontSize = 7.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldenYellow
+                            color = PrimaryGold
                         )
                     }
                 }

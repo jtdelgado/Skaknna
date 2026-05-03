@@ -28,6 +28,12 @@ import androidx.compose.ui.unit.sp
 import com.skaknna.R
 import com.skaknna.ui.theme.*
 
+// ─── Modern Classic Color Definitions ──────────────────────────────────────────
+
+// Chess board square colors: Matte cream and brown (no internal gradients)
+val boardLightSquareColor = BoardCream
+val boardDarkSquareColor = BoardBrown
+
 // ─── Piece → Drawable resource mapping ────────────────────────────────────────
 
 fun pieceDrawable(piece: Char): Int = when (piece) {
@@ -75,9 +81,6 @@ fun ChessBoard(
 
     var boardBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
-    val lightSquareBrush = Brush.radialGradient(colors = listOf(WoodLightCenter, WoodLight))
-    val darkSquareBrush  = Brush.radialGradient(colors = listOf(WoodDarkCenter, WoodDark))
-
     // Which cell is the drag currently hovering over?
     val hoveredCell: Pair<Int, Int>? = remember(activeDrag, boardBounds) {
         val drag = activeDrag ?: return@remember null
@@ -98,20 +101,12 @@ fun ChessBoard(
         modifier = Modifier
             .size(squareSize)
             .align(Alignment.Center)
-            .shadow(
-                elevation = 12.dp,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-                ambientColor = GoldenYellow.copy(alpha = 0.3f),
-                spotColor = WoodDark
-            )
             .border(
-                width = 4.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(GoldenYellow, WoodLight, GoldenYellow)
-                ),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                width = 1.dp,
+                color = OutlineColor,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(2.dp)
             )
-            .background(WoodDark)
+            .background(SurfaceDark)
             .padding(6.dp)
             .onGloballyPositioned { coords ->
                 boardBounds = coords.boundsInWindow()
@@ -145,13 +140,17 @@ fun ChessBoard(
                             .weight(1f)
                             .fillMaxHeight()
                             .background(
-                                if (isLightSquare) lightSquareBrush else darkSquareBrush
+                                if (isLightSquare) boardLightSquareColor else boardDarkSquareColor
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = OutlineColor
                             )
                             .then(
                                 when {
                                     // Drop target highlight (during drag)
                                     isHovered && activeDrag != null ->
-                                        Modifier.border(2.dp, GoldenYellow).background(GoldGlow)
+                                        Modifier.background(GoldGlow)
                                     // Eraser mode: red cell tint on occupied squares
                                     showEraserOverlay ->
                                         Modifier.background(Color.Red.copy(alpha = 0.25f))
@@ -258,7 +257,7 @@ fun ChessBoard(
                             Box(
                                 modifier = Modifier
                                     .size(14.dp)
-                                    .background(GoldenYellow, shape = CircleShape)
+                                    .background(PrimaryGold, shape = CircleShape)
                             )
                         }
                     }

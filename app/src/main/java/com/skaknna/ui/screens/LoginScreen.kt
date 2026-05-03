@@ -10,7 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -19,17 +22,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.skaknna.R
 import com.skaknna.ui.components.auth.GoogleLoginButton
-import com.skaknna.ui.theme.GoldenYellow
-import com.skaknna.ui.theme.WarmWhite
-import com.skaknna.ui.theme.WoodDark
-import com.skaknna.ui.theme.WoodLight
+import com.skaknna.ui.theme.*
 import com.skaknna.viewmodel.AuthViewModel
 
 /**
  * Pantalla de login con Google.
  * 
  * Características:
- * - Interfaz atractiva con temática de madera (acorde al ajedrez)
+ * - Interfaz atractiva con temática moderna y minimalista
  * - Autenticación moderna con Credential Manager
  * - Estados de carga y error
  * - Información del usuario logeado
@@ -45,23 +45,18 @@ fun LoginScreen(
     onNavigateBack: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight(),
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color.Transparent)
     ) {
-        Box(
+        Card(
             modifier = Modifier
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            WoodLight,
-                            WoodDark
-                        )
-                    )
-                )
+                .fillMaxWidth(0.95f)
+                .wrapContentHeight()
+                .align(Alignment.Center)
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp), clip = false),
+            shape = RoundedCornerShape(28.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(containerColor = SurfaceGreen)
         ) {
             // Contenido principal
             Column(
@@ -87,20 +82,21 @@ fun LoginScreen(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(id = R.string.button_cancel),
-                        tint = GoldenYellow,
+                        tint = PrimaryGold,
                         modifier = Modifier.size(28.dp)
                     )
                 }
                 
                 Text(
                     text = stringResource(id = R.string.login_title),
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 20.sp,
-                    color = GoldenYellow,
-                    textAlign = TextAlign.Center
+                    color = PrimaryGold,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.headlineMedium
                 )
                 
-                Spacer(modifier = Modifier.width(48.dp)) // Para centrar el título
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
             // Contenido central
@@ -115,7 +111,7 @@ fun LoginScreen(
                         .size(80.dp)
                         .padding(bottom = 24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = GoldenYellow.copy(alpha = 0.1f)
+                        containerColor = PrimaryGold.copy(alpha = 0.1f)
                     ),
                     shape = MaterialTheme.shapes.extraLarge
                 ) {
@@ -126,7 +122,7 @@ fun LoginScreen(
                         Text(
                             text = "♔",
                             fontSize = 48.sp,
-                            color = GoldenYellow
+                            color = PrimaryGold
                         )
                     }
                 }
@@ -134,11 +130,12 @@ fun LoginScreen(
                 // Título principal
                 Text(
                     text = stringResource(id = R.string.login_welcome),
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 28.sp,
                     color = WarmWhite,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.headlineLarge
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -168,7 +165,7 @@ fun LoginScreen(
                 TextButton(onClick = onNavigateBack) {
                     Text(
                         text = "Continuar sin iniciar sesión",
-                        color = GoldenYellow.copy(alpha = 0.8f),
+                        color = PrimaryGold.copy(alpha = 0.8f),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -181,9 +178,10 @@ fun LoginScreen(
                         .fillMaxWidth(0.9f)
                         .padding(horizontal = 16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = WoodDark.copy(alpha = 0.8f)
+                        containerColor = SurfaceGreen
                     ),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, OutlineColor)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -212,7 +210,7 @@ fun LoginScreen(
                     .padding(top = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Divider(color = GoldenYellow.copy(alpha = 0.3f))
+                HorizontalDivider(color = OutlineColor)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(id = R.string.login_privacy_notice),
@@ -242,7 +240,7 @@ private fun InfoBullet(
         Text(
             text = "•",
             fontSize = 16.sp,
-            color = GoldenYellow,
+            color = PrimaryGold,
             modifier = Modifier.padding(top = 2.dp)
         )
         Column {
@@ -250,7 +248,7 @@ private fun InfoBullet(
                 text = title,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
-                color = GoldenYellow
+                color = PrimaryGold
             )
             Text(
                 text = description,

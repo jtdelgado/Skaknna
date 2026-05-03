@@ -31,7 +31,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
@@ -42,9 +44,11 @@ import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.skaknna.BuildConfig
 import com.skaknna.R
+import com.skaknna.ui.theme.*
 import com.skaknna.vision.ChessVisionManager
 import com.skaknna.vision.VisionState
 import androidx.compose.ui.res.stringResource
+import com.skaknna.ui.components.SkaknnaTopAppBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,6 +64,7 @@ fun ScannerScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -144,28 +149,36 @@ fun ScannerScreen(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(id = R.string.screen_title_scanner), color = com.skaknna.ui.theme.GoldenYellow, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium) },
+            SkaknnaTopAppBar(
+                title = stringResource(id = R.string.screen_title_scanner),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.button_back), tint = com.skaknna.ui.theme.GoldenYellow)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.button_back), tint = PrimaryGold)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor)
+                scrollBehavior = scrollBehavior
             )
         }
     ) { paddingValues ->
+        val radialGradient = Brush.radialGradient(
+            colors = listOf(BackgroundGradientCenter, BackgroundGradientEdge),
+            radius = Float.MAX_VALUE
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(radialGradient)
                 .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             if (hasCameraPermission) {
                 if (visionState is VisionState.Analyzing) {
-                    CircularProgressIndicator(color = com.skaknna.ui.theme.GoldenYellow)
+                    CircularProgressIndicator(color = PrimaryGold)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(stringResource(id = R.string.scanner_analyzing_ai), color = com.skaknna.ui.theme.WarmWhite, fontWeight = FontWeight.Bold)
                 } else if (capturedImageUri != null) {
@@ -174,7 +187,7 @@ fun ScannerScreen(
                             .fillMaxWidth()
                             .padding(16.dp)
                             .aspectRatio(1f)
-                            .border(2.dp, com.skaknna.ui.theme.GoldenYellow)
+                            .border(1.dp, PrimaryGold)
                     ) {
                         AsyncImage(
                             model = capturedImageUri,
@@ -205,9 +218,10 @@ fun ScannerScreen(
                                 visionState = VisionState.Idle 
                             },
                             icon = { Icon(Icons.Default.Refresh, contentDescription = stringResource(id = R.string.button_retry)) },
-                            text = { Text(stringResource(id = R.string.button_retry), fontWeight = FontWeight.Bold) },
-                            containerColor = com.skaknna.ui.theme.WoodDark,
-                            contentColor = com.skaknna.ui.theme.GoldenYellow
+                            text = { Text(stringResource(id = R.string.button_retry), fontWeight = FontWeight.SemiBold) },
+                            containerColor = SurfaceGreen,
+                            contentColor = PrimaryGold,
+                            modifier = Modifier.border(1.dp, PrimaryGold, RoundedCornerShape(16.dp))
                         )
 
                         ExtendedFloatingActionButton(
@@ -249,9 +263,10 @@ fun ScannerScreen(
                                 }
                             },
                             icon = { Icon(Icons.Default.Check, contentDescription = stringResource(id = R.string.scanner_analyze_desc)) },
-                            text = { Text(stringResource(id = R.string.scanner_analyze_button), fontWeight = FontWeight.Bold) },
-                            containerColor = com.skaknna.ui.theme.WoodMedium,
-                            contentColor = com.skaknna.ui.theme.WarmWhite
+                            text = { Text(stringResource(id = R.string.scanner_analyze_button), fontWeight = FontWeight.SemiBold) },
+                            containerColor = SurfaceGreen,
+                            contentColor = PrimaryGold,
+                            modifier = Modifier.border(1.dp, PrimaryGold, RoundedCornerShape(16.dp))
                         )
                     }
                 } else {
@@ -260,7 +275,7 @@ fun ScannerScreen(
                             .fillMaxWidth()
                             .padding(16.dp)
                             .aspectRatio(1f)
-                            .border(2.dp, com.skaknna.ui.theme.GoldenYellow)
+                            .border(1.dp, PrimaryGold)
                     ) {
                         if (cameraProvider != null) {
                             AndroidView(
@@ -303,10 +318,10 @@ fun ScannerScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(com.skaknna.ui.theme.WoodDark),
+                                    .background(SurfaceGreen),
                                 contentAlignment = Alignment.Center
                             ) {
-                                CircularProgressIndicator(color = com.skaknna.ui.theme.GoldenYellow)
+                                CircularProgressIndicator(color = PrimaryGold)
                             }
                         }
 
@@ -375,21 +390,21 @@ fun ScannerScreen(
                                 )
                             },
                             icon = { Icon(Icons.Default.Camera, contentDescription = stringResource(id = R.string.button_capture)) },
-                            text = { Text(stringResource(id = R.string.button_capture), fontWeight = FontWeight.Bold) },
-                            containerColor = if (isCameraReady) com.skaknna.ui.theme.WoodMedium else com.skaknna.ui.theme.WoodDark,
-                            contentColor = com.skaknna.ui.theme.GoldenYellow,
+                            text = { Text(stringResource(id = R.string.button_capture), fontWeight = FontWeight.SemiBold) },
+                            containerColor = SurfaceGreen,
+                            contentColor = PrimaryGold,
                             modifier = Modifier
                                 .weight(1f)
-                                .border(3.dp, com.skaknna.ui.theme.WoodDark, RoundedCornerShape(16.dp))
+                                .border(1.dp, PrimaryGold, RoundedCornerShape(16.dp))
                         )
 
                         FilledIconButton(
                             onClick = { galleryLauncher.launch("image/*") },
                             modifier = Modifier
                                 .size(56.dp)
-                                .border(3.dp, com.skaknna.ui.theme.WoodDark, RoundedCornerShape(16.dp)),
+                                .border(1.dp, PrimaryGold, RoundedCornerShape(16.dp)),
                             shape = RoundedCornerShape(16.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = com.skaknna.ui.theme.WoodDark, contentColor = com.skaknna.ui.theme.GoldenYellow)
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = SurfaceGreen, contentColor = PrimaryGold)
                         ) {
                             Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(id = R.string.button_gallery))
                         }
@@ -399,7 +414,7 @@ fun ScannerScreen(
                 // Should not reach here usually since ungranted returns back
                 Text(stringResource(id = R.string.scanner_camera_permission))
             } else {
-                CircularProgressIndicator(color = com.skaknna.ui.theme.GoldenYellow)
+                CircularProgressIndicator(color = PrimaryGold)
             }
         }
     }
@@ -499,7 +514,7 @@ private fun FenCompletionDialog(
                     }
                 }
 
-                Divider()
+                HorizontalDivider()
 
                 // Castling Rights
                 Text(

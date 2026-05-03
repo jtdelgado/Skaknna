@@ -12,17 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.skaknna.R
-import com.skaknna.ui.theme.GoldenYellow
-import com.skaknna.ui.theme.WarmWhite
-import com.skaknna.ui.theme.WoodDark
-import com.skaknna.ui.theme.WoodMedium
+import com.skaknna.ui.theme.*
 import com.skaknna.viewmodel.AuthState
 import com.skaknna.viewmodel.AuthViewModel
 
@@ -107,19 +103,15 @@ private fun GoogleLoginButtonContent(
         enabled = !isLoading,
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(12.dp),
-                ambientColor = Color.Black.copy(alpha = 0.15f)
-            ),
+            .height(56.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = WoodMedium,
-            contentColor = GoldenYellow,
-            disabledContainerColor = WoodDark,
+            containerColor = SurfaceGreen,
+            contentColor = PrimaryGold,
+            disabledContainerColor = SurfaceGreen.copy(alpha = 0.5f),
             disabledContentColor = WarmWhite.copy(alpha = 0.5f)
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGold)
     ) {
         if (isLoading) {
             Row(
@@ -129,13 +121,13 @@ private fun GoogleLoginButtonContent(
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
-                    color = GoldenYellow,
+                    color = PrimaryGold,
                     strokeWidth = 2.dp
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Autenticando...",
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 )
             }
@@ -148,13 +140,13 @@ private fun GoogleLoginButtonContent(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_google),
                         contentDescription = "Google Logo",
-                        tint = GoldenYellow,
+                        tint = PrimaryGold,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "Iniciar sesión con Google",
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
                     )
                 }
@@ -177,11 +169,10 @@ private fun UserProfileCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(12.dp))
-            .border(2.dp, GoldenYellow, RoundedCornerShape(12.dp)),
-        shape = RoundedCornerShape(12.dp),
+            .border(1.dp, OutlineColor, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = WoodDark,
+            containerColor = SurfaceGreen,
             contentColor = WarmWhite
         )
     ) {
@@ -199,13 +190,13 @@ private fun UserProfileCard(
             ) {
                 Text(
                     text = "✓ Sesión Iniciada",
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = GoldenYellow
+                    color = PrimaryGold
                 )
             }
 
-            Divider(color = WoodMedium)
+            Divider(color = OutlineColor)
 
             // Información del usuario
             InfoRow(label = "Nombre", value = displayName)
@@ -221,12 +212,12 @@ private fun UserProfileCard(
                     .fillMaxWidth()
                     .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
+                    containerColor = ErrorColor,
                     contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Cerrar Sesión", fontWeight = FontWeight.Bold)
+                Text("Cerrar Sesión", fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -244,7 +235,7 @@ private fun InfoRow(label: String, value: String) {
         Text(
             text = label,
             fontWeight = FontWeight.SemiBold,
-            color = GoldenYellow
+            color = PrimaryGold
         )
         Text(
             text = value,
@@ -266,11 +257,10 @@ private fun ErrorCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(12.dp))
-            .border(2.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp)),
-        shape = RoundedCornerShape(12.dp),
+            .border(1.dp, OutlineColor, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = WoodDark,
+            containerColor = SurfaceGreen,
             contentColor = WarmWhite
         )
     ) {
@@ -288,15 +278,15 @@ private fun ErrorCard(
             ) {
                 Text(
                     text = "✗ Error de Autenticación",
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.error
+                    color = ErrorColor
                 )
                 IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Cerrar",
-                        tint = MaterialTheme.colorScheme.error
+                        tint = ErrorColor
                     )
                 }
             }
@@ -309,7 +299,7 @@ private fun ErrorCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                        color = ErrorColor.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(8.dp)
                     )
                     .padding(12.dp)
@@ -326,12 +316,12 @@ private fun ErrorCard(
                         .weight(1f)
                         .height(40.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GoldenYellow,
-                        contentColor = WoodDark
+                        containerColor = PrimaryGold,
+                        contentColor = SurfaceGreen
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Reintentar", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("Reintentar", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                 }
 
                 OutlinedButton(
@@ -342,7 +332,7 @@ private fun ErrorCard(
                     border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Descartar", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("Descartar", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                 }
             }
         }

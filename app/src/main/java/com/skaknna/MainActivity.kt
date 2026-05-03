@@ -20,6 +20,7 @@ import com.skaknna.viewmodel.BoardViewModelFactory
 import com.skaknna.viewmodel.SettingsViewModelFactory
 import com.skaknna.viewmodel.SettingsViewModel
 import com.skaknna.viewmodel.AuthViewModelFactory
+import com.skaknna.ui.theme.BackgroundGradientCenter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,8 +54,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             SkaknnaTheme {
                 Scaffold(
-                    modifier       = Modifier.fillMaxSize().checkerboardBackground(),
-                    containerColor = Color.Transparent
+                    modifier       = Modifier.fillMaxSize(),
+                    containerColor = BackgroundGradientCenter
                 ) {
                     AppNavigation(
                         paddingValues            = it,
