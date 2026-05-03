@@ -153,4 +153,10 @@
     <string name="button_profile">Perfil</string>
     <string name="button_logout">Cerrar Sesión</string>
 
+    <!-- ==================== DASHBOARD SYNC ==================== -->
+    <string name="dashboard_sync_success">Sync: ↑%1$d subidos · ↓%2$d descargados</string>
+    <string name="dashboard_sync_error">Error de sincronización: %1$s</string>
+    <string name="dashboard_sync_pull_hint">Desliza hacia abajo para sincronizar\ntus tableros desde la nube</string>
+    <string name="dashboard_user_fallback">Usuario</string>
+
 </resources>

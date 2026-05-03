@@ -82,10 +82,11 @@ fun AppNavigation(
             )
         }
         composable("editor") {
+            val editorUserId = (authViewModel.authState.collectAsState().value as? AuthState.Success)?.userId
             EditorScreen(
                 viewModel = boardViewModel,
                 onSaveBoard = { boardName ->
-                    boardViewModel.saveBoard(boardName)
+                    boardViewModel.saveBoard(boardName, editorUserId)
                     navController.navigate("analysis") {
                         popUpTo("editor") { inclusive = true }
                     }

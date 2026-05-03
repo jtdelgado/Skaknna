@@ -11,11 +11,11 @@ import com.skaknna.ui.navigation.AppNavigation
 import com.skaknna.ui.theme.SkaknnaTheme
 import androidx.compose.ui.graphics.Color
 import com.skaknna.ui.components.checkerboardBackground
-
 import androidx.activity.SystemBarStyle
 import com.skaknna.data.local.AppDatabase
 import com.skaknna.data.remote.RemoteBoardService
 import com.skaknna.data.repository.BoardRepository
+import com.skaknna.viewmodel.AuthViewModel
 import com.skaknna.viewmodel.BoardViewModelFactory
 import com.skaknna.viewmodel.SettingsViewModelFactory
 import com.skaknna.viewmodel.SettingsViewModel
@@ -24,38 +24,43 @@ import com.skaknna.viewmodel.AuthViewModelFactory
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Initialize Storage
-        val database = AppDatabase.getDatabase(this)
+
+        val database      = AppDatabase.getDatabase(this)
         val remoteService = RemoteBoardService()
-        val repository = BoardRepository(database.boardDao(), remoteService)
-        
-        // Initialize ViewModelFactories
+        val repository    = BoardRepository(database.boardDao(), remoteService)
+
         val settingsViewModelFactory = SettingsViewModelFactory(this)
-        val settingsViewModel = settingsViewModelFactory.create(SettingsViewModel::class.java) as SettingsViewModel
-        val viewModelFactory = BoardViewModelFactory(repository, settingsViewModel, this)
-        
-        // Initialize AuthViewModelFactory with WEB_CLIENT_ID
+        val settingsViewModel = settingsViewModelFactory
+            .create(SettingsViewModel::class.java) as SettingsViewModel
+
         val authViewModelFactory = AuthViewModelFactory(
-            context = this,
+            context     = this,
             webClientId = BuildConfig.WEB_CLIENT_ID
+        )
+        val authViewModel = authViewModelFactory
+            .create(AuthViewModel::class.java) as AuthViewModel
+
+        val boardViewModelFactory = BoardViewModelFactory(
+            repository        = repository,
+            settingsViewModel = settingsViewModel,
+            context           = this
         )
 
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            statusBarStyle     = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
         setContent {
             SkaknnaTheme {
                 Scaffold(
-                    modifier = Modifier.fillMaxSize().checkerboardBackground(),
+                    modifier       = Modifier.fillMaxSize().checkerboardBackground(),
                     containerColor = Color.Transparent
                 ) {
                     AppNavigation(
-                        paddingValues = it,
-                        boardViewModelFactory = viewModelFactory,
+                        paddingValues            = it,
+                        boardViewModelFactory    = boardViewModelFactory,
                         settingsViewModelFactory = settingsViewModelFactory,
-                        authViewModelFactory = authViewModelFactory
+                        authViewModelFactory     = authViewModelFactory
                     )
                 }
             }

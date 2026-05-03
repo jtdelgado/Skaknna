@@ -1,5 +1,8 @@
 package com.skaknna.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -15,12 +18,16 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
@@ -31,6 +38,7 @@ import com.skaknna.viewmodel.BoardViewModel
 import com.skaknna.viewmodel.AuthViewModel
 import com.skaknna.viewmodel.AuthState
 import com.skaknna.data.model.Board
+import com.skaknna.data.model.SyncState
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import com.skaknna.R
@@ -47,12 +55,46 @@ fun DashboardScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
-    val authState = authViewModel.authState.collectAsState()
+    val authState by authViewModel.authState.collectAsState()
     val boards by viewModel.allBoards.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
 
     var boardToRename by remember { mutableStateOf<Board?>(null) }
     var boardToDelete by remember { mutableStateOf<Board?>(null) }
     var showAuthMenu by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val currentUserId = (authState as? AuthState.Success)?.userId
+    LaunchedEffect(currentUserId) {
+        if (currentUserId != null) {
+            viewModel.syncWithCloud(currentUserId)
+        }
+    }
+
+
+    val syncSuccessMsg = stringResource(R.string.dashboard_sync_success)
+    val syncErrorMsg   = stringResource(R.string.dashboard_sync_error)
+    LaunchedEffect(syncState) {
+        when (val s = syncState) {
+            is SyncState.Success -> {
+                if (s.uploadedCount > 0 || s.downloadedCount > 0) {
+                    snackbarHostState.showSnackbar(
+                        syncSuccessMsg.format(s.uploadedCount, s.downloadedCount)
+                    )
+                }
+                viewModel.resetSyncState()
+            }
+            is SyncState.Error -> {
+                snackbarHostState.showSnackbar(syncErrorMsg.format(s.message))
+                viewModel.resetSyncState()
+            }
+            else -> Unit
+        }
+    }
+
+    val isRefreshing = syncState is SyncState.Syncing
+    val pullRefreshState = rememberPullToRefreshState()
+
 
     if (boardToRename != null) {
         var newName by remember { mutableStateOf(boardToRename!!.name) }
@@ -91,6 +133,7 @@ fun DashboardScreen(
         )
     }
 
+
     if (boardToDelete != null) {
         AlertDialog(
             onDismissRequest = { boardToDelete = null },
@@ -118,21 +161,43 @@ fun DashboardScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(id = R.string.screen_title_dashboard), color = com.skaknna.ui.theme.GoldenYellow, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium) },
+                title = {
+                    Text(
+                        stringResource(id = R.string.screen_title_dashboard),
+                        color = com.skaknna.ui.theme.GoldenYellow,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = com.skaknna.ui.theme.TransparentColor),
                 actions = {
-                    // Auth Menu
+
+                    AnimatedVisibility(
+                        visible = isRefreshing,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(end = 4.dp),
+                            strokeWidth = 2.dp,
+                            color = com.skaknna.ui.theme.GoldenYellow
+                        )
+                    }
+
+
                     Box {
                         IconButton(
                             onClick = { showAuthMenu = !showAuthMenu },
                             modifier = Modifier.padding(end = 4.dp)
                         ) {
-                            when (val state = authState.value) {
+                            when (val state = authState) {
                                 is AuthState.Success -> {
                                     if (state.profilePictureUrl != null) {
-                                        // Mostrar foto de perfil de Google
                                         AsyncImage(
                                             model = state.profilePictureUrl,
                                             contentDescription = stringResource(id = R.string.button_profile),
@@ -143,7 +208,6 @@ fun DashboardScreen(
                                             contentScale = ContentScale.Crop
                                         )
                                     } else {
-                                        // Fallback: mostrar la inicial
                                         Box(
                                             modifier = Modifier
                                                 .size(36.dp)
@@ -171,17 +235,16 @@ fun DashboardScreen(
                                 }
                             }
                         }
-                        
+
                         DropdownMenu(
                             expanded = showAuthMenu,
                             onDismissRequest = { showAuthMenu = false },
                             modifier = Modifier.background(com.skaknna.ui.theme.WoodDark)
                         ) {
-                            when (authState.value) {
+                            when (val s = authState) {
                                 is AuthState.Success -> {
-                                    val userState = authState.value as AuthState.Success
                                     DropdownMenuItem(
-                                        text = { Text(userState.email ?: "Usuario", color = com.skaknna.ui.theme.WarmWhite) },
+                                        text = { Text(s.email ?: stringResource(R.string.dashboard_user_fallback), color = com.skaknna.ui.theme.WarmWhite) },
                                         onClick = { showAuthMenu = false }
                                     )
                                     Divider(color = com.skaknna.ui.theme.GoldenYellow.copy(alpha = 0.3f))
@@ -206,7 +269,7 @@ fun DashboardScreen(
                             }
                         }
                     }
-                    
+
                     IconButton(
                         onClick = onNavigateToSettings,
                         modifier = Modifier.padding(end = 8.dp)
@@ -247,120 +310,155 @@ fun DashboardScreen(
     ) { paddingValues ->
         val dateFormatPattern = stringResource(id = R.string.date_format)
         val dateFormat = SimpleDateFormat(dateFormatPattern, Locale.getDefault())
-        
-        LazyColumn(
+
+
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                val uid = (authState as? AuthState.Success)?.userId
+                if (uid != null) {
+                    viewModel.syncWithCloud(uid)
+                }
+            },
+            state = pullRefreshState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                top = 16.dp,
-                end = 16.dp,
-                bottom = 160.dp
-            )
+                .padding(paddingValues)
         ) {
-            if (boards.isEmpty()) {
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 64.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.dashboard_no_boards),
-                            color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.5f),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(id = R.string.dashboard_empty_hint),
-                            color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.4f),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            } else {
-                items(boards, key = { it.id }) { board ->
-                    var expanded by remember { mutableStateOf(false) }
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .border(3.dp, com.skaknna.ui.theme.WoodDark, RoundedCornerShape(12.dp))
-                            .clickable {
-                                viewModel.updateFen(board.fen)
-                                onNavigateToAnalysis()
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = com.skaknna.ui.theme.WoodMedium,
-                            contentColor = com.skaknna.ui.theme.WarmWhite
-                        )
-                    ) {
-                        Row(
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = 160.dp
+                )
+            ) {
+                if (boards.isEmpty()) {
+                    item {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(top = 64.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = board.name, 
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = com.skaknna.ui.theme.GoldenYellow
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = stringResource(id = R.string.dashboard_saved_format, dateFormat.format(Date(board.updatedAt))), 
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.8f)
-                                )
-                            }
-                            
-                            Box {
-                                IconButton(onClick = { expanded = true }) {
+                            Text(
+                                text = stringResource(id = R.string.dashboard_no_boards),
+                                color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.5f),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(id = R.string.dashboard_empty_hint),
+                                color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.4f),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+
+
+                            if (currentUserId != null) {
+                                Spacer(modifier = Modifier.height(32.dp))
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     Icon(
-                                        imageVector = Icons.Default.MoreVert,
-                                        contentDescription = stringResource(id = R.string.dashboard_options_desc),
-                                        tint = com.skaknna.ui.theme.WarmWhite
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = null,
+                                        tint = com.skaknna.ui.theme.GoldenYellow.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.dashboard_sync_pull_hint),
+                                        color = com.skaknna.ui.theme.GoldenYellow.copy(alpha = 0.6f),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        textAlign = TextAlign.Center
                                     )
                                 }
-                                
-                                DropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false },
-                                    modifier = Modifier.background(com.skaknna.ui.theme.WoodMedium)
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.dashboard_rename_menu), color = com.skaknna.ui.theme.WarmWhite) },
-                                        leadingIcon = { 
-                                            Icon(
-                                                Icons.Default.Edit, 
-                                                contentDescription = null,
-                                                tint = com.skaknna.ui.theme.GoldenYellow
-                                            ) 
-                                        },
-                                        onClick = {
-                                            expanded = false
-                                            boardToRename = board
-                                        }
+                            }
+                        }
+                    }
+                } else {
+                    items(boards, key = { it.id }) { board ->
+                        var expanded by remember { mutableStateOf(false) }
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .border(3.dp, com.skaknna.ui.theme.WoodDark, RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.updateFen(board.fen)
+                                    onNavigateToAnalysis()
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = com.skaknna.ui.theme.WoodMedium,
+                                contentColor = com.skaknna.ui.theme.WarmWhite
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = board.name,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = com.skaknna.ui.theme.GoldenYellow
                                     )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.dashboard_delete_menu), color = MaterialTheme.colorScheme.error) },
-                                        leadingIcon = { 
-                                            Icon(
-                                                Icons.Default.Delete, 
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.error
-                                            ) 
-                                        },
-                                        onClick = {
-                                            expanded = false
-                                            boardToDelete = board
-                                        }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = stringResource(id = R.string.dashboard_saved_format, dateFormat.format(Date(board.updatedAt))),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = com.skaknna.ui.theme.WarmWhite.copy(alpha = 0.8f)
                                     )
+                                }
+
+                                Box {
+                                    IconButton(onClick = { expanded = true }) {
+                                        Icon(
+                                            imageVector = Icons.Default.MoreVert,
+                                            contentDescription = stringResource(id = R.string.dashboard_options_desc),
+                                            tint = com.skaknna.ui.theme.WarmWhite
+                                        )
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false },
+                                        modifier = Modifier.background(com.skaknna.ui.theme.WoodMedium)
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.dashboard_rename_menu), color = com.skaknna.ui.theme.WarmWhite) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Default.Edit,
+                                                    contentDescription = null,
+                                                    tint = com.skaknna.ui.theme.GoldenYellow
+                                                )
+                                            },
+                                            onClick = {
+                                                expanded = false
+                                                boardToRename = board
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.dashboard_delete_menu), color = MaterialTheme.colorScheme.error) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            },
+                                            onClick = {
+                                                expanded = false
+                                                boardToDelete = board
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -147,5 +147,10 @@
     <string name="login_feature_3_title">Google Security</string>
     <string name="login_feature_3_desc">Protection with Google\'s security standards</string>
     <string name="login_privacy_notice">Your information is protected by Google. We never share data with third parties.</string>
+    <!-- ==================== DASHBOARD SYNC ==================== -->
+    <string name="dashboard_sync_success">Sync: ↑%1$d uploaded · ↓%2$d downloaded</string>
+    <string name="dashboard_sync_error">Sync error: %1$s</string>
+    <string name="dashboard_sync_pull_hint">Pull down to sync\nyour boards from the cloud</string>
+    <string name="dashboard_user_fallback">User</string>
 
 </resources>
