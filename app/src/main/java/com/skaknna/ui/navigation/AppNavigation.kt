@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import com.skaknna.ui.screens.AnalysisScreen
 import com.skaknna.ui.screens.DashboardScreen
@@ -35,22 +36,26 @@ fun AppNavigation(
     val settingsViewModel: SettingsViewModel = viewModel(factory = settingsViewModelFactory)
     val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
     
-    val authState = authViewModel.authState.collectAsState()
-    val startDestination = if (authState.value is AuthState.Success) "dashboard" else "login"
+    val startDestination = "dashboard"
 
     NavHost(
         navController = navController, 
         startDestination = startDestination,
         modifier = Modifier.padding(paddingValues)
     ) {
-        composable("login") {
+        dialog("login") {
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate("dashboard") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
-                onNavigateToSettings = { navController.navigate("settings") },
+                onNavigateToSettings = {
+                    // When navigating from a dialog to a screen, it's often better to pop the dialog
+                    navController.popBackStack()
+                    navController.navigate("settings") 
+                },
+                onNavigateBack = { navController.popBackStack() },
                 viewModel = authViewModel
             )
         }

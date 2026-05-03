@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,38 +42,55 @@ import com.skaknna.viewmodel.AuthViewModel
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateBack: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
-    Box(
+    Card(
         modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        WoodLight,
-                        WoodDark
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            WoodLight,
+                            WoodDark
+                        )
                     )
                 )
-            )
-    ) {
-        // Contenido principal
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Encabezado con botón de configuración
+            // Contenido principal
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+            // Encabezado con botón de cerrar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Spacer(modifier = Modifier.width(48.dp))
+                IconButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(id = R.string.button_cancel),
+                        tint = GoldenYellow,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
                 
                 Text(
                     text = stringResource(id = R.string.login_title),
@@ -83,26 +100,14 @@ fun LoginScreen(
                     textAlign = TextAlign.Center
                 )
                 
-                IconButton(
-                    onClick = onNavigateToSettings,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = stringResource(id = R.string.settings_title),
-                        tint = GoldenYellow,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(48.dp)) // Para centrar el título
             }
 
             // Contenido central
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Icono/Logo
                 Card(
@@ -147,7 +152,7 @@ fun LoginScreen(
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
 
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Botón de login
                 GoogleLoginButton(
@@ -155,10 +160,20 @@ fun LoginScreen(
                     onLoginSuccess = onLoginSuccess,
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 8.dp)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextButton(onClick = onNavigateBack) {
+                    Text(
+                        text = "Continuar sin iniciar sesión",
+                        color = GoldenYellow.copy(alpha = 0.8f),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Información adicional
                 Card(
@@ -206,6 +221,7 @@ fun LoginScreen(
                     textAlign = TextAlign.Center
                 )
             }
+        }
         }
     }
 }
