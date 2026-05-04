@@ -57,9 +57,10 @@ fun EditorScreen(
     val fen by viewModel.fen.collectAsState()
     val board by viewModel.board.collectAsState()
     val validation by viewModel.validation.collectAsState()
+    val showSaveDialog by viewModel.showSaveDialog.collectAsState()
+    val saveErrorMessage by viewModel.saveErrorMessage.collectAsState()
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
-    var showSaveDialog by remember { mutableStateOf(false) }
     var boardName by remember { mutableStateOf("") }
     var selectedTurn by remember { mutableStateOf("w") }
 
@@ -85,7 +86,7 @@ fun EditorScreen(
     // ─── Save dialog ──────────────────────────────────────────────────────────
     if (showSaveDialog) {
         AlertDialog(
-            onDismissRequest = { showSaveDialog = false },
+            onDismissRequest = { viewModel.dismissSaveDialog() },
             title = {
                 Text(
                     stringResource(id = R.string.editor_save_dialog_title),
@@ -155,19 +156,9 @@ fun EditorScreen(
             confirmButton = {
                 TextButton(
                     onClick = { 
-                        showSaveDialog = false
-                        val parts = fen.split(" ").toMutableList()
-                        if (parts.isNotEmpty()) {
-                            if (parts.size == 1) {
-                                parts.addAll(listOf("w", "KQkq", "-", "0", "1"))
-                            }
-                            parts[1] = selectedTurn
-                            val newFen = parts.joinToString(" ")
-                            if (newFen != fen) {
-                                viewModel.updateFen(newFen)
-                            }
+                        if (viewModel.onSaveConfirmClicked(selectedTurn)) {
+                            onSaveBoard(boardName)
                         }
-                        onSaveBoard(boardName)
                     },
                     enabled = boardName.isNotBlank()
                 ) {
@@ -179,8 +170,31 @@ fun EditorScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showSaveDialog = false }) {
+                TextButton(onClick = { viewModel.dismissSaveDialog() }) {
                     Text(stringResource(id = R.string.button_cancel), color = WarmWhite)
+                }
+            }
+        )
+    }
+
+    if (saveErrorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearSaveErrorMessage() },
+            shape = RoundedCornerShape(28.dp),
+            title = {
+                Text(
+                    text = "Posición Inválida",
+                    color = ErrorColor,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(stringResource(id = saveErrorMessage!!), color = WarmWhite)
+            },
+            containerColor = SurfaceGreen,
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearSaveErrorMessage() }) {
+                    Text("Entendido", color = PrimaryGold)
                 }
             }
         )
@@ -264,7 +278,7 @@ fun EditorScreen(
                         IconButton(onClick = { 
                             val parts = fen.split(" ")
                             selectedTurn = if (parts.size >= 2 && parts[1] == "b") "b" else "w"
-                            showSaveDialog = true 
+                            viewModel.onSaveIconClicked()
                         }) {
                             Icon(
                                 Icons.Default.Save,

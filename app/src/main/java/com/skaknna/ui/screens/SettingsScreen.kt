@@ -46,8 +46,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit
 ) {
-    val analysisDepth = viewModel.analysisDepth.collectAsState()
-    val estimatedTime = viewModel.getEstimatedAnalysisTime(analysisDepth.value)
+    val currentLevel = viewModel.analysisLevel.collectAsState().value
 
     val radialGradient = Brush.radialGradient(
         colors = listOf(BackgroundGradientCenter, BackgroundGradientEdge),
@@ -110,7 +109,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = analysisDepth.value.toString(),
+                    text = currentLevel.depth.toString(),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryGold
@@ -121,18 +120,18 @@ fun SettingsScreen(
 
             // Depth Slider
             Slider(
-                value = analysisDepth.value.toFloat(),
+                value = currentLevel.ordinal.toFloat(),
                 onValueChange = { newValue ->
-                    viewModel.setAnalysisDepth(newValue.toInt())
+                    viewModel.setAnalysisLevel(newValue.toInt())
                 },
-                valueRange = 1f..20f,
-                steps = 18,
+                valueRange = 0f..3f,
+                steps = 2,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp),
                 colors = SliderDefaults.colors(
                     thumbColor = PrimaryGold,
-                    activeTrackColor = LeafGreen,
+                    activeTrackColor = PrimaryGold,
                     inactiveTrackColor = OutlineColor
                 )
             )
@@ -145,64 +144,38 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = when {
-                        analysisDepth.value <= 5 -> stringResource(id = R.string.settings_depth_fast_icon)
-                        analysisDepth.value <= 12 -> stringResource(id = R.string.settings_depth_balanced_icon)
-                        else -> stringResource(id = R.string.settings_depth_deep_icon)
-                    },
-                    fontSize = 12.sp,
-                    color = WarmWhite
+                    text = stringResource(id = currentLevel.titleRes),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PrimaryGold
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = estimatedTime,
+                    text = stringResource(id = currentLevel.timeRes),
                     fontSize = 12.sp,
-                    color = DeepEspresso
+                    color = WarmWhite.copy(alpha = 0.7f)
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Information Card
-            DepthExplanationCard(analysisDepth.value)
+            AnalysisCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+            ) {
+                Text(
+                    text = stringResource(id = currentLevel.descRes),
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    color = WarmWhite
+                )
+            }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DepthExplanationCard(depth: Int) {
-    val explanation = when {
-        depth <= 12 -> {
-            stringResource(id = R.string.settings_depth_instant)
-        }
-        depth <= 18 -> {
-            stringResource(id = R.string.settings_depth_fast)
-        }
-        depth <= 24 -> {
-            stringResource(id = R.string.settings_depth_advanced)
-        }
-        depth <= 30 -> {
-            stringResource(id = R.string.settings_depth_deep)
-        }
-        else -> {
-            stringResource(id = R.string.settings_depth_max)
-        }
-    }
-
-    AnalysisCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-    ) {
-        Text(
-            text = explanation,
-            fontSize = 12.sp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            color = WarmWhite
-        )
     }
 }

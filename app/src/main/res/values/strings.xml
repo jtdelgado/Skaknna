@@ -122,22 +122,36 @@
     <string name="editor_title">Editor FEN</string>
     <string name="editor_piece_limit_badge">MAX</string>
 
-    <!-- ==================== SETTINGS DEPTH EXPLANATIONS ==================== -->
-    <string name="settings_depth_instant">Análisis instantáneo. Ideal para detectar errores graves de inmediato.</string>
-    <string name="settings_depth_fast">Análisis rápido. Nivel de Gran Maestro, perfecto para juego fluido.</string>
-    <string name="settings_depth_advanced">Análisis avanzado. Evalúa variantes estratégicas con gran precisión.</string>
-    <string name="settings_depth_deep">Análisis profundo. Detecta sutilezas que solo los mejores motores ven.</string>
-    <string name="settings_depth_max">Análisis de máxima precisión. Fuerza bruta total para posiciones críticas.</string>
+    <!-- ==================== SETTINGS DEPTH LEVELS ==================== -->
+    <string name="analysis_level_quick">⚡ Rápido</string>
+    <string name="analysis_desc_quick">Análisis veloz. Ideal para detectar errores graves de inmediato.</string>
+    <string name="analysis_time_quick">&lt; 1 segundo</string>
 
-    <!-- ==================== SETTINGS DEPTH ICONS ==================== -->
-    <string name="settings_depth_fast_icon">🔋 Rápido</string>
-    <string name="settings_depth_balanced_icon">⚖️ Balanceado</string>
-    <string name="settings_depth_deep_icon">🧠 Profundo</string>
+    <string name="analysis_level_standard">⚖️ Estándar</string>
+    <string name="analysis_desc_standard">Nivel equilibrado. Perfecto para un juego fluido y revisión táctica.</string>
+    <string name="analysis_time_standard">1-3 segundos</string>
+
+    <string name="analysis_level_deep">🧠 Profundo</string>
+    <string name="analysis_desc_deep">Análisis exhaustivo. Evalúa variantes estratégicas complejas.</string>
+    <string name="analysis_time_deep">5-10 segundos</string>
+
+    <string name="analysis_level_ultra">🔥 Ultra</string>
+    <string name="analysis_desc_ultra">Fuerza bruta total. Para desentrañar posiciones críticas.</string>
+    <string name="analysis_time_ultra">&gt; 15 segundos</string>
 
     <!-- ==================== PIECE DESCRIPTIONS ==================== -->
     <string name="piece_white_description">Pieza blanca %1$s</string>
     <string name="piece_black_description">Pieza negra %1$s</string>
     <string name="piece_generic_description">Pieza %1$s</string>
+    
+    <!-- ==================== EDITOR ERRORS ==================== -->
+    <string name="error_invalid_fen_regex">El formato del FEN no es válido estructuralmente.</string>
+    <string name="error_missing_kings">El tablero debe tener exactamente un Rey blanco y un Rey negro para ser válido.</string>
+    <string name="error_invalid_rank_sum">Cada fila debe sumar exactamente 8 casillas.</string>
+    <string name="error_pawns_on_end_ranks">No pueden existir peones en la primera ni en la última fila.</string>
+    <string name="error_illegal_check">El Rey oponente está en jaque, lo cual es ilegal dado el turno seleccionado.</string>
+    <string name="error_chesslib_illegal">Posición ilegal según las reglas estrictas del ajedrez (reyes tocándose, jaques múltiples imposibles, etc).</string>
+    <string name="error_impossible_inventory">Posición imposible: demasiadas piezas extra para la cantidad de peones disponibles.</string>
     <string name="login_title">Iniciar Sesión</string>
     <string name="login_welcome">Bienvenido a Skaknna</string>
     <string name="login_description">Inicia sesión con tu cuenta de Google para guardar tus análisis en la nube y acceder desde cualquier dispositivo.</string>

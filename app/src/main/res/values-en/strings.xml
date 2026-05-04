@@ -114,6 +114,15 @@
     <string name="piece_black_description">Black piece %1$s</string>
     <string name="piece_generic_description">Piece %1$s</string>
 
+    <!-- ==================== EDITOR ERRORS ==================== -->
+    <string name="error_invalid_fen_regex">The FEN format is structurally invalid.</string>
+    <string name="error_missing_kings">The board must have exactly one white King and one black King to be valid.</string>
+    <string name="error_invalid_rank_sum">Each rank must sum up to exactly 8 squares.</string>
+    <string name="error_pawns_on_end_ranks">Pawns cannot exist on the first or last rank.</string>
+    <string name="error_illegal_check">The opponent\'s King is in check, which is illegal given the selected turn.</string>
+    <string name="error_chesslib_illegal">Illegal position according to strict chess rules (touching kings, impossible checks, etc).</string>
+    <string name="error_impossible_inventory">Impossible position: too many major pieces for the number of available pawns.</string>
+
     <!-- ==================== DASHBOARD DELETE CONFIRMATION ==================== -->
     <string name="dashboard_delete_confirmation">Do you want to permanently delete the board \'%1$s\'?</string>
 
@@ -124,17 +133,22 @@
     <string name="editor_title">FEN Editor</string>
     <string name="editor_piece_limit_badge">MAX</string>
 
-    <!-- ==================== SETTINGS DEPTH EXPLANATIONS ==================== -->
-    <string name="settings_depth_instant">Instant analysis. Ideal for detecting serious errors immediately.</string>
-    <string name="settings_depth_fast">Fast analysis. Grandmaster level, perfect for fluid gameplay.</string>
-    <string name="settings_depth_advanced">Advanced analysis. Evaluates strategic variants with great precision.</string>
-    <string name="settings_depth_deep">Deep analysis. Detects subtleties that only the best engines see.</string>
-    <string name="settings_depth_max">Maximum precision analysis. Full brute force for critical positions.</string>
+    <!-- ==================== SETTINGS DEPTH LEVELS ==================== -->
+    <string name="analysis_level_quick">⚡ Quick</string>
+    <string name="analysis_desc_quick">Fast analysis. Ideal for detecting serious blunders immediately.</string>
+    <string name="analysis_time_quick">&lt; 1 second</string>
 
-    <!-- ==================== SETTINGS DEPTH ICONS ==================== -->
-    <string name="settings_depth_fast_icon">🔋 Fast</string>
-    <string name="settings_depth_balanced_icon">⚖️ Balanced</string>
-    <string name="settings_depth_deep_icon">🧠 Deep</string>
+    <string name="analysis_level_standard">⚖️ Standard</string>
+    <string name="analysis_desc_standard">Balanced level. Perfect for fluid gameplay and tactical review.</string>
+    <string name="analysis_time_standard">1-3 seconds</string>
+
+    <string name="analysis_level_deep">🧠 Deep</string>
+    <string name="analysis_desc_deep">Exhaustive analysis. Evaluates complex strategic variations.</string>
+    <string name="analysis_time_deep">5-10 seconds</string>
+
+    <string name="analysis_level_ultra">🔥 Ultra</string>
+    <string name="analysis_desc_ultra">Full brute force. To unravel critical positions.</string>
+    <string name="analysis_time_ultra">&gt; 15 seconds</string>
 
     <!-- ==================== LOGIN SCREEN ==================== -->
     <string name="login_title">Sign In</string>

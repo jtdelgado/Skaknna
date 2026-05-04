@@ -15,51 +15,47 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+import com.skaknna.R
+
+enum class AnalysisLevel(
+    val depth: Int,
+    val titleRes: Int,
+    val descRes: Int,
+    val timeRes: Int
+) {
+    QUICK(14, R.string.analysis_level_quick, R.string.analysis_desc_quick, R.string.analysis_time_quick),
+    STANDARD(18, R.string.analysis_level_standard, R.string.analysis_desc_standard, R.string.analysis_time_standard),
+    DEEP(22, R.string.analysis_level_deep, R.string.analysis_desc_deep, R.string.analysis_time_deep),
+    ULTRA(26, R.string.analysis_level_ultra, R.string.analysis_desc_ultra, R.string.analysis_time_ultra)
+}
+
 // DataStore extension
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
 class SettingsViewModel(private val context: Context) : ViewModel() {
 
     companion object {
-        private val ANALYSIS_DEPTH_KEY = intPreferencesKey("analysis_depth")
-        private const val DEFAULT_ANALYSIS_DEPTH = 5
-        private const val MIN_DEPTH = 1
-        private const val MAX_DEPTH = 20
+        private val ANALYSIS_LEVEL_KEY = intPreferencesKey("analysis_level")
+        private val DEFAULT_ANALYSIS_LEVEL = AnalysisLevel.STANDARD
     }
 
-    val analysisDepth: StateFlow<Int> = context.dataStore.data
-        .map { preferences -> preferences[ANALYSIS_DEPTH_KEY] ?: DEFAULT_ANALYSIS_DEPTH }
+    val analysisLevel: StateFlow<AnalysisLevel> = context.dataStore.data
+        .map { preferences -> 
+            val levelIndex = preferences[ANALYSIS_LEVEL_KEY] ?: DEFAULT_ANALYSIS_LEVEL.ordinal
+            AnalysisLevel.values().getOrNull(levelIndex) ?: DEFAULT_ANALYSIS_LEVEL
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = DEFAULT_ANALYSIS_DEPTH
+            initialValue = DEFAULT_ANALYSIS_LEVEL
         )
 
-    /**
-     * Updates the analysis depth setting and persists to DataStore.
-     * 
-     * @param depth The new depth value (1-20)
-     */
-    fun setAnalysisDepth(depth: Int) {
-        val clampedDepth = depth.coerceIn(MIN_DEPTH, MAX_DEPTH)
+    fun setAnalysisLevel(levelOrdinal: Int) {
+        val clampedLevel = levelOrdinal.coerceIn(0, AnalysisLevel.values().size - 1)
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
-                preferences[ANALYSIS_DEPTH_KEY] = clampedDepth
+                preferences[ANALYSIS_LEVEL_KEY] = clampedLevel
             }
-        }
-    }
-
-    /**
-     * Gets the estimated analysis time based on depth level.
-     * These are rough estimates for typical positions.
-     */
-    fun getEstimatedAnalysisTime(depth: Int): String {
-        return when {
-            depth <= 3 -> "< 1 second"
-            depth <= 6 -> "1-2 seconds"
-            depth <= 10 -> "2-5 seconds"
-            depth <= 15 -> "5-10 seconds"
-            else -> "> 10 seconds"
         }
     }
 }

@@ -9,6 +9,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOn
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.File
@@ -55,6 +56,9 @@ class StockfishManager(
     suspend fun startEngine(): String? = withContext(dispatcher) {
         return@withContext try {
             Log.d(TAG, "=== Starting Stockfish Engine ===")
+            
+            // Clean up any old instance or zombie streams before starting a new one
+            shutdown()
             
             val binaryFile = getBinaryFile()
             Log.d(TAG, "Binary file path: ${binaryFile.absolutePath}")
@@ -114,31 +118,41 @@ class StockfishManager(
         }
     }
 
-    suspend fun analyzePosition(
-    fen: String,
-    depth: Int = 15,
-    moveTimeMs: Int? = null
-    ): AnalysisResult? = withContext(dispatcher) {
+    fun analyzePosition(
+        fen: String,
+        depth: Int = 15,
+        moveTimeMs: Int? = null
+    ): kotlinx.coroutines.flow.Flow<AnalysisResult> = kotlinx.coroutines.flow.flow {
         analyzeMutex.withLock {
             Log.d(TAG, "=== Analyzing Position ===")
             
             if (!isEngineReady) {
                 Log.e(TAG, "ERROR: Engine not ready for analysis")
-                return@withContext null
+                return@withLock
             }
 
             if (fen.isBlank()) {
                 Log.e(TAG, "ERROR: Invalid FEN provided")
-                return@withContext null
+                return@withLock
             }
 
-            return@withContext try {
+            try {
                 isAnalyzing = true
                 
                 Log.d(TAG, "FEN: $fen")
                 Log.d(TAG, "Depth: $depth")
 
                 sendCommand(UCI_NEW_GAME)
+                
+                // Synchronize engine readiness before feeding position
+                sendCommand("isready")
+                val isReadyOk = waitForResponse("readyok", 3000)
+                if (!isReadyOk) {
+                    Log.e(TAG, "ERROR: Engine failed isready sync after ucinewgame")
+                    isEngineReady = false
+                    return@withLock
+                }
+
                 sendCommand(String.format(UCI_POSITION, fen))
 
                 val goCommand = if (moveTimeMs != null && moveTimeMs > 0) {
@@ -149,21 +163,89 @@ class StockfishManager(
                 sendCommand(goCommand)
 
                 Log.d(TAG, "Waiting for Stockfish analysis results...")
-                val result = parseAnalysisOutput()
-                if (result == null) {
-                    isEngineReady = false
+                
+                var bestMove = ""
+                var evaluation = 0f
+                var principalVariation = ""
+                var currentDepth = 0
+                var nodes = 0L
+                val startTime = System.currentTimeMillis()
+                var lastInfoTime = System.currentTimeMillis()
+                val absoluteTimeoutMs = 30000L
+                val inactiveTimeoutMs = 5000L
+
+                while (System.currentTimeMillis() - startTime < absoluteTimeoutMs) {
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    
+                    val now = System.currentTimeMillis()
+                    if (now - lastInfoTime > inactiveTimeoutMs) {
+                        Log.e(TAG, "ERROR: Stockfish inactive for > 5s. Triggering auto-reboot.")
+                        isEngineReady = false
+                        break
+                    }
+
+                    val processDied = try {
+                        process?.exitValue()
+                        true
+                    } catch (e: IllegalThreadStateException) {
+                        false
+                    }
+                    
+                    if (processDied) {
+                        Log.e(TAG, "ERROR: Stockfish process died during analysis")
+                        isEngineReady = false
+                        break
+                    }
+
+                    if (outputReader?.ready() == true) {
+                        val line = outputReader?.readLine()
+                        if (line == null) {
+                            Log.e(TAG, "ERROR: EOF reached during parsing")
+                            isEngineReady = false
+                            break
+                        }
+                        
+                        lastInfoTime = System.currentTimeMillis() // Reset timeout on any output
+                        Log.d("StockfishOutput", line)
+
+                        if (line.startsWith("bestmove")) {
+                            val parts = line.split(" ")
+                            if (parts.size >= 2) {
+                                bestMove = parts[1]
+                            }
+                            emit(AnalysisResult(bestMove, evaluation, principalVariation, currentDepth, nodes))
+                            break
+                        } else if (line.startsWith("info")) {
+                            val newEval = parseEvaluation(line)
+                            if (newEval != 0f || line.contains("score")) {
+                                evaluation = newEval
+                            }
+                            val parsedDepth = parseDepth(line)
+                            if (parsedDepth > 0) currentDepth = parsedDepth
+                            
+                            val newPv = parsePrincipalVariation(line)
+                            if (newPv.isNotEmpty()) {
+                                principalVariation = newPv
+                            }
+                            
+                            val newNodes = parseNodes(line)
+                            if (newNodes > 0) nodes = newNodes
+
+                            emit(AnalysisResult("", evaluation, principalVariation, currentDepth, nodes))
+                        }
+                    } else {
+                        delay(5)
+                    }
                 }
-                result
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 Log.e(TAG, "Error analyzing position: ${e.message}", e)
                 isEngineReady = false
-                null
             } finally {
                 isAnalyzing = false
             }
         }
-    }
+    }.flowOn(dispatcher)
 
     suspend fun stopAnalysis() = withContext(dispatcher) {
         if (isAnalyzing) {
@@ -214,6 +296,10 @@ class StockfishManager(
             inputWriter?.newLine()
             inputWriter?.flush()
             Log.d(TAG, "UCI Command sent: $command")
+        } catch (e: java.io.IOException) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "IOException writing to Stockfish pipe: ${e.message}", e)
+            isEngineReady = false
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Error sending command: ${e.message}", e)
@@ -270,92 +356,6 @@ class StockfishManager(
         }
         
         false
-    }
-
-    private suspend fun parseAnalysisOutput(): AnalysisResult? = withContext(dispatcher) {
-        var bestMove = ""
-        var evaluation = 0f
-        var principalVariation = ""
-        var depth = 0
-        var nodes = 0L
-        val startTime = System.currentTimeMillis()
-        val timeoutMs = 30000L
-        var lineCount = 0
-
-        try {
-            Log.d(TAG, "Starting to parse analysis output...")
-            
-            while (System.currentTimeMillis() - startTime < timeoutMs) {
-                ensureActive()
-                
-                // Check if process has unexpectedly exited
-                val processDied = try {
-                    process?.exitValue()
-                    true
-                } catch (e: IllegalThreadStateException) {
-                    false
-                }
-                
-                if (processDied) {
-                    Log.e(TAG, "ERROR: Stockfish process died during analysis")
-                    isEngineReady = false
-                    break
-                }
-
-                if (outputReader?.ready() == true) {
-                    val line = outputReader?.readLine()
-                    if (line == null) {
-                        Log.e(TAG, "ERROR: EOF reached during parsing")
-                        isEngineReady = false
-                        break
-                    }
-                    
-                    lineCount++
-                    Log.v(TAG, "[$lineCount] $line")
-
-                    when {
-                        line.startsWith("bestmove") -> {
-                            val parts = line.split(" ")
-                            if (parts.size >= 2) {
-                                bestMove = parts[1]
-                                Log.d(TAG, "OK: Found bestmove: $bestMove")
-                            }
-                            break
-                        }
-                        line.startsWith("info") -> {
-                            evaluation = parseEvaluation(line)
-                            depth = parseDepth(line)
-                            principalVariation = parsePrincipalVariation(line)
-                            nodes = parseNodes(line)
-                            if (depth > 0) {
-                                Log.v(TAG, "Info: depth=$depth eval=$evaluation nodes=$nodes")
-                            }
-                        }
-                    }
-                } else {
-                    delay(5) // non-blocking wait
-                }
-            }
-
-            Log.d(TAG, "Finished parsing. Total lines: $lineCount, bestMove: $bestMove")
-
-            return@withContext if (bestMove.isNotEmpty()) {
-                AnalysisResult(
-                    bestMove = bestMove,
-                    evaluation = evaluation,
-                    principalVariation = principalVariation,
-                    depth = depth,
-                    nodes = nodes
-                )
-            } else {
-                Log.e(TAG, "ERROR: No bestmove found in analysis output")
-                null
-            }
-        } catch (e: Exception) {
-            if (e is kotlinx.coroutines.CancellationException) throw e
-            Log.e(TAG, "ERROR: Error parsing analysis output: ${e.message}", e)
-            null
-        }
     }
 
     private val REGEX_EVAL = """score\s+(cp|mate)\s+(-?\d+)""".toRegex()

@@ -28,6 +28,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
+import com.skaknna.R
+
+sealed class ValidationResult {
+    object Valid : ValidationResult()
+    data class Invalid(val errorResId: Int) : ValidationResult()
+}
 
 class BoardViewModel(
     private val repository: BoardRepository,
@@ -77,6 +83,124 @@ class BoardViewModel(
     private val _validation = MutableStateFlow(validateBoard(_board.value))
     val validation: StateFlow<BoardValidation> = _validation.asStateFlow()
 
+    private val _showSaveDialog = MutableStateFlow(false)
+    val showSaveDialog: StateFlow<Boolean> = _showSaveDialog.asStateFlow()
+
+    private val _saveErrorMessage = MutableStateFlow<Int?>(null)
+    val saveErrorMessage: StateFlow<Int?> = _saveErrorMessage.asStateFlow()
+
+    fun isFenLegal(fen: String, turn: String): ValidationResult {
+        val parts = fen.split(" ").toMutableList()
+        if (parts.size == 1) {
+            parts.addAll(listOf(turn, "KQkq", "-", "0", "1"))
+        } else {
+            parts[1] = turn
+        }
+        val fullFen = parts.joinToString(" ")
+
+        val boardPart = parts[0]
+        
+        val whiteKings = boardPart.count { it == 'K' }
+        val blackKings = boardPart.count { it == 'k' }
+        if (whiteKings != 1 || blackKings != 1) {
+            return ValidationResult.Invalid(R.string.error_missing_kings)
+        }
+
+        // Chesslib strict validation
+        val board = com.github.bhlangonijr.chesslib.Board()
+        try {
+            board.loadFromFen(fullFen)
+            
+            val inactiveSide = if (board.sideToMove == com.github.bhlangonijr.chesslib.Side.WHITE) 
+                com.github.bhlangonijr.chesslib.Side.BLACK else com.github.bhlangonijr.chesslib.Side.WHITE
+                
+            val inactiveKingSquare = board.getKingSquare(inactiveSide)
+            if (inactiveKingSquare != com.github.bhlangonijr.chesslib.Square.NONE) {
+                if (board.squareAttackedBy(inactiveKingSquare, board.sideToMove) != 0L) {
+                    return ValidationResult.Invalid(R.string.error_chesslib_illegal)
+                }
+            }
+        } catch (e: Exception) {
+            // Any parsing exception from chesslib means the FEN is fundamentally invalid
+            return ValidationResult.Invalid(R.string.error_invalid_fen_regex)
+        }
+
+        // Inventory validation (Promotion rule)
+        
+        // Count pieces
+        val whitePawns = boardPart.count { it == 'P' }
+        val whiteKnights = boardPart.count { it == 'N' }
+        val whiteBishops = boardPart.count { it == 'B' }
+        val whiteRooks = boardPart.count { it == 'R' }
+        val whiteQueens = boardPart.count { it == 'Q' }
+
+        val blackPawns = boardPart.count { it == 'p' }
+        val blackKnights = boardPart.count { it == 'n' }
+        val blackBishops = boardPart.count { it == 'b' }
+        val blackRooks = boardPart.count { it == 'r' }
+        val blackQueens = boardPart.count { it == 'q' }
+
+        // White inventory check
+        val missingWhitePawns = 8 - whitePawns
+        val extraWhitePieces = maxOf(0, whiteQueens - 1) +
+                maxOf(0, whiteRooks - 2) +
+                maxOf(0, whiteBishops - 2) +
+                maxOf(0, whiteKnights - 2)
+
+        if (extraWhitePieces > missingWhitePawns) {
+            return ValidationResult.Invalid(R.string.error_impossible_inventory)
+        }
+
+        // Black inventory check
+        val missingBlackPawns = 8 - blackPawns
+        val extraBlackPieces = maxOf(0, blackQueens - 1) +
+                maxOf(0, blackRooks - 2) +
+                maxOf(0, blackBishops - 2) +
+                maxOf(0, blackKnights - 2)
+
+        if (extraBlackPieces > missingBlackPawns) {
+            return ValidationResult.Invalid(R.string.error_impossible_inventory)
+        }
+
+        return ValidationResult.Valid
+    }
+
+    fun onSaveIconClicked() {
+        _showSaveDialog.value = true
+    }
+
+    fun onSaveConfirmClicked(turn: String): Boolean {
+        val result = isFenLegal(_fen.value, turn)
+        if (result is ValidationResult.Valid) {
+            val parts = _fen.value.split(" ").toMutableList()
+            if (parts.isNotEmpty()) {
+                if (parts.size == 1) {
+                    parts.addAll(listOf(turn, "KQkq", "-", "0", "1"))
+                } else {
+                    parts[1] = turn
+                }
+                val newFen = parts.joinToString(" ")
+                if (newFen != _fen.value) {
+                    updateFen(newFen)
+                }
+            }
+            _showSaveDialog.value = false
+            return true
+        } else if (result is ValidationResult.Invalid) {
+            _saveErrorMessage.value = result.errorResId
+            return false
+        }
+        return false
+    }
+
+    fun dismissSaveDialog() {
+        _showSaveDialog.value = false
+    }
+
+    fun clearSaveErrorMessage() {
+        _saveErrorMessage.value = null
+    }
+
     init {
         viewModelScope.launch {
             _fen
@@ -89,11 +213,11 @@ class BoardViewModel(
         }
 
         viewModelScope.launch {
-            settingsViewModel.analysisDepth
+            settingsViewModel.analysisLevel
                 .debounce(200)
-                .collectLatest { newDepth ->
+                .collectLatest { newLevel ->
                     if (stockfishInitialized && _fen.value.isNotBlank()) {
-                        Log.d(TAG, "Analysis depth changed to $newDepth, re-analyzing...")
+                        Log.d(TAG, "Analysis depth changed to ${newLevel.depth}, re-analyzing...")
                         triggerAnalysis(_fen.value)
                     }
                 }
@@ -235,7 +359,7 @@ class BoardViewModel(
                 try {
                     ensureActive()
                     _isAnalyzing.value = true
-                    val depth = settingsViewModel.analysisDepth.value
+                    val depth = settingsViewModel.analysisLevel.value.depth
 
                     if (depth <= 0) {
                         _bestMove.value = ""
@@ -244,26 +368,38 @@ class BoardViewModel(
                         return@withLock
                     }
 
-                    val result = stockfishManager.analyzePosition(fen, depth)
-                    ensureActive()
+                    var finalResultReceived = false
+                    try {
+                        stockfishManager.analyzePosition(fen, depth).collect { update ->
+                            ensureActive()
+                            _evaluation.value = update.evaluation
+                            if (update.principalVariation.isNotBlank()) {
+                                _analysisLine.value = update.principalVariation
+                            }
+                            if (update.bestMove.isNotBlank()) {
+                                _bestMove.value = update.bestMove
+                                finalResultReceived = true
+                                Log.d(TAG, "Analysis complete: bestMove=${update.bestMove} eval=${update.evaluation}")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        if (e !is CancellationException) {
+                            Log.e(TAG, "Error in analysis flow: ${e.message}", e)
+                        } else {
+                            throw e
+                        }
+                    }
 
-                    if (result != null) {
-                        _bestMove.value = result.bestMove
-                        _evaluation.value = result.evaluation
-                        _analysisLine.value = result.principalVariation
-                        Log.d(TAG, "Analysis complete: bestMove=${result.bestMove} eval=${result.evaluation}")
-                    } else {
+                    if (!finalResultReceived && !stockfishManager.isEngineReady) {
                         _bestMove.value = ""
                         _evaluation.value = 0f
                         _analysisLine.value = ""
-                        if (!stockfishManager.isEngineReady) {
-                            Log.w(TAG, "Engine crashed, restarting...")
-                            stockfishInitialized = false
-                            ensureStockfishInitialized()
-                            viewModelScope.launch {
-                                kotlinx.coroutines.delay(1000)
-                                if (stockfishInitialized) triggerAnalysis(fen)
-                            }
+                        Log.w(TAG, "Engine crashed, restarting...")
+                        stockfishInitialized = false
+                        ensureStockfishInitialized()
+                        viewModelScope.launch {
+                            kotlinx.coroutines.delay(1000)
+                            if (stockfishInitialized) triggerAnalysis(fen)
                         }
                     }
                 } catch (e: CancellationException) {
