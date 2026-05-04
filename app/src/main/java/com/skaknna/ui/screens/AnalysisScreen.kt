@@ -61,6 +61,7 @@ fun AnalysisScreen(
         topBar = {
             SkaknnaTopAppBar(
                 title = stringResource(id = R.string.screen_title_analysis),
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(

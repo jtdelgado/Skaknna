@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -248,6 +250,7 @@ fun EditorScreen(
             topBar = {
                 SkaknnaTopAppBar(
                     title = stringResource(id = R.string.editor_title),
+                    scrollBehavior = scrollBehavior,
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
@@ -274,15 +277,16 @@ fun EditorScreen(
                 )
             }
         ) { paddingValues ->
-            // Root Box: hosts content + floating overlays (drag piece, delete zone)
             Box(modifier = Modifier
                 .fillMaxSize()
                 .background(radialGradient)) {
+                val scrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp)
+                        .verticalScroll(scrollState),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -375,7 +379,6 @@ fun EditorScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f)
                             .clip(RoundedCornerShape(16.dp))
                             .background(SurfaceGreen)
                             .border(1.dp, OutlineColor, RoundedCornerShape(16.dp))
@@ -396,7 +399,7 @@ fun EditorScreen(
                             board = board,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f),
+                                .aspectRatio(1f),
                             onBoardBoundsChanged = { boardBoundsInWindow = it },
                             onDrop = { source, toRow, toCol ->
                                 handleBoardDrop(source, toRow, toCol)

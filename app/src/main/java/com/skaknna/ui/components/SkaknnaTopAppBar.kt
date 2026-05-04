@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.skaknna.ui.theme.BackgroundGradientCenter
 import com.skaknna.ui.theme.PrimaryGold
 import com.skaknna.ui.theme.SurfaceGreen
 
@@ -27,8 +28,10 @@ import androidx.compose.material3.TopAppBarScrollBehavior
  * that scales gracefully on narrow screens.
  *
  * Features:
- * - Transparent background handling for edge-to-edge aesthetics.
- * - Auto-scaling text to avoid truncation.
+ * - Always-dark container: colors are pinned to app tokens, ignoring system light/dark mode.
+ * - Transparent background when expanded (gradient shows through).
+ * - BackgroundGradientCenter when collapsed — never turns white in light mode.
+ * - Auto-scaling title to avoid truncation.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,16 +43,22 @@ fun SkaknnaTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
     val collapsedFraction = scrollBehavior?.state?.collapsedFraction ?: 0f
-    val maxFontSize = 32f
-    val minFontSize = 20f
-    val currentFontSize = (maxFontSize - (maxFontSize - minFontSize) * collapsedFraction).sp
 
     LargeTopAppBar(
         title = {
+            // Identify which title slot is rendering based on default text styles
+            val isExpandedSlot = androidx.compose.material3.LocalTextStyle.current.fontSize > 22.sp
+            
+            // Clean transition: Expanded disappears fast, collapsed appears at the very end
+            val alpha = if (isExpandedSlot) {
+                1f - (collapsedFraction / 0.5f).coerceIn(0f, 1f)
+            } else {
+                ((collapsedFraction - 0.7f) / 0.3f).coerceIn(0f, 1f)
+            }
+
             Text(
                 text = title,
-                color = PrimaryGold,
-                fontSize = currentFontSize,
+                color = PrimaryGold.copy(alpha = alpha),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -59,8 +68,12 @@ fun SkaknnaTopAppBar(
         navigationIcon = navigationIcon ?: {},
         actions = actions,
         colors = TopAppBarDefaults.largeTopAppBarColors(
-            containerColor = Color.Transparent,
-            scrolledContainerColor = MaterialTheme.colorScheme.background // Matches app background
+            // Static colors for both states ensure a seamless, solid surface with no flicker/shadow
+            containerColor = BackgroundGradientCenter,
+            scrolledContainerColor = BackgroundGradientCenter,
+            titleContentColor = PrimaryGold,
+            actionIconContentColor = PrimaryGold,
+            navigationIconContentColor = PrimaryGold,
         ),
         scrollBehavior = scrollBehavior
     )

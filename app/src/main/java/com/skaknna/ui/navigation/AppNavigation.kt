@@ -4,10 +4,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import com.skaknna.ui.screens.AnalysisScreen
@@ -35,11 +40,37 @@ fun AppNavigation(
     val boardViewModel: BoardViewModel = viewModel(factory = boardViewModelFactory)
     val settingsViewModel: SettingsViewModel = viewModel(factory = settingsViewModelFactory)
     val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
-    
+
     val startDestination = "dashboard"
 
+    // ── Double-back / black-screen guard ────────────────────────────────────
+    // Tracks whether a popBackStack() is already in flight so that two rapid
+    // back-presses do not drain the entire back stack and leave a black screen.
+    var isNavigatingBack by remember { mutableStateOf(false) }
+
+    // Observe the current route so we can block pops at the root destination.
+    val currentBackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackEntry?.destination?.route
+
+    /**
+     * Safe pop: no-ops when already at startDestination or when a previous pop
+     * is still being processed.
+     */
+    fun safePopBackStack() {
+        if (isNavigatingBack) return               // debounce rapid double-tap
+        if (currentRoute == startDestination) return // never pop the root screen
+        if (navController.previousBackStackEntry == null) return // Prevent popping to black screen
+        isNavigatingBack = true
+        navController.popBackStack()
+        // Reset the flag after the frame — Compose's LaunchedEffect can't be used
+        // here (non-composable context) so we rely on the navController callback.
+        navController.addOnDestinationChangedListener { _, _, _ ->
+            isNavigatingBack = false
+        }
+    }
+
     NavHost(
-        navController = navController, 
+        navController = navController,
         startDestination = startDestination,
         modifier = Modifier.padding(paddingValues)
     ) {
@@ -51,11 +82,10 @@ fun AppNavigation(
                     }
                 },
                 onNavigateToSettings = {
-                    // When navigating from a dialog to a screen, it's often better to pop the dialog
                     navController.popBackStack()
-                    navController.navigate("settings") 
+                    navController.navigate("settings")
                 },
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { safePopBackStack() },
                 viewModel = authViewModel
             )
         }
@@ -67,10 +97,10 @@ fun AppNavigation(
                 onNavigateToEditor = { navController.navigate("editor") },
                 onNavigateToAnalysis = { navController.navigate("analysis") },
                 onNavigateToSettings = { navController.navigate("settings") },
-                onNavigateToLogin = { 
-                    navController.navigate("login") { 
-                        popUpTo(0) { inclusive = true } 
-                    } 
+                onNavigateToLogin = {
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
@@ -78,12 +108,11 @@ fun AppNavigation(
             ScannerScreen(
                 onValidationComplete = { fen ->
                     boardViewModel.updateFen(fen)
-                    // Navigate to editor directly after scan
                     navController.navigate("editor") {
                         popUpTo("scanner") { inclusive = true }
                     }
                 },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { safePopBackStack() }
             )
         }
         composable("editor") {
@@ -96,20 +125,20 @@ fun AppNavigation(
                         popUpTo("editor") { inclusive = true }
                     }
                 },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { safePopBackStack() }
             )
         }
         composable("analysis") {
             AnalysisScreen(
                 viewModel = boardViewModel,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { safePopBackStack() },
                 onNavigateToSettings = { navController.navigate("settings") }
             )
         }
         composable("settings") {
             SettingsScreen(
                 viewModel = settingsViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { safePopBackStack() }
             )
         }
     }

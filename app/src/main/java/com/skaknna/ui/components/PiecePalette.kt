@@ -71,6 +71,7 @@ fun PiecePalette(
                 modifier = Modifier
                     .weight(1f)
                     .aspectRatio(1f)
+                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(SurfaceGreen)
                     .border(
